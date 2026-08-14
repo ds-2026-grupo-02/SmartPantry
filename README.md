@@ -12,7 +12,3 @@ Este repositorio corresponde al Trabajo Práctico Integrador de la asignatura De
 ## Propósito
 
 El trabajo práctico final consiste en desarrollar una aplicación web que ayude a las personas a consultar información pública de alimentos envasados, organizar una despensa personal y reconocer posibles incompatibilidades con sus preferencias alimentarias. La aplicación no brinda diagnóstico ni recomendación médica: presenta información proveniente de una fuente externa y la contrasta con preferencias configuradas por el usuario.
-
-## Cómo ejecutar
-
-Pendiente de TP 03.
