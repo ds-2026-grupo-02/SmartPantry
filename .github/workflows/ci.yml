@@ -1,0 +1,36 @@
+name: Verificación inicial
+on:
+  pull_request:
+    branches: [main, stg, prod]
+  push:
+    branches: [main]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar archivos requeridos
+        shell: bash
+        run: |
+          required_files=(
+            README.md
+            CONTRIBUTING.md
+            CONFIGURACION_INICIAL.md
+            .gitignore
+            .github/CODEOWNERS
+            .github/PULL_REQUEST_TEMPLATE.md
+            .github/ISSUE_TEMPLATE/feature.yml
+            .github/workflows/ci.yml
+          )
+          for file in "${required_files[@]}"; do
+            test -f "$file" || { echo "::error file=$file::Falta el archivo requerido"; exit 1; }
+          done
+      - name: Verificar marcadores obligatorios
+        shell: bash
+        run: |
+          if grep -En '<(organizacion|repositorio|Nombre del proyecto|Nombre y usuario GitHub)>' README.md CONTRIBUTING.md .github/CODEOWNERS; then
+            echo "::error::Quedan marcadores obligatorios sin reemplazar"
+            exit 1
+          fi
+      - name: Alcance de TP02
+        run: echo "La compilación y las pruebas .NET se incorporan en TP03."

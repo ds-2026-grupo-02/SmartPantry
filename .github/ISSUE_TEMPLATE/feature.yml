@@ -1,0 +1,30 @@
+name: Funcionalidad
+description: Planificar una capacidad del TP integrador
+title: "[Feature]: "
+labels: [feature]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objetivo
+      description: Qué necesidad resuelve esta capacidad.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceptación
+      value: "- [ ] "
+    validations:
+      required: true
+  - type: input
+    id: estimate
+    attributes:
+      label: Estimación (h)
+      placeholder: Ej. 4
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Decisiones, riesgos o dependencias
