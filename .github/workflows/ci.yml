@@ -1,36 +1,33 @@
-name: Verificación inicial
-on:
-  pull_request:
-    branches: [main, stg, prod]
-  push:
-    branches: [main]
-jobs:
-  verify:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Verificar archivos requeridos
-        shell: bash
-        run: |
-          required_files=(
-            README.md
-            CONTRIBUTING.md
-            CONFIGURACION_INICIAL.md
-            .gitignore
-            .github/CODEOWNERS
-            .github/PULL_REQUEST_TEMPLATE.md
-            .github/ISSUE_TEMPLATE/feature.yml
-            .github/workflows/ci.yml
-          )
-          for file in "${required_files[@]}"; do
-            test -f "$file" || { echo "::error file=$file::Falta el archivo requerido"; exit 1; }
-          done
-      - name: Verificar marcadores obligatorios
-        shell: bash
-        run: |
-          if grep -En '<(organizacion|repositorio|Nombre del proyecto|Nombre y usuario GitHub)>' README.md CONTRIBUTING.md .github/CODEOWNERS; then
-            echo "::error::Quedan marcadores obligatorios sin reemplazar"
-            exit 1
-          fi
-      - name: Alcance de TP02
-        run: echo "La compilación y las pruebas .NET se incorporan en TP03."
+name: CI 
+  
+on: 
+  pull_request: 
+  push: 
+    branches: [main, stg, prod] 
+  
+jobs: 
+  backend: 
+    runs-on: ubuntu-latest 
+    steps: 
+      - uses: actions/checkout@v4 
+      - uses: actions/setup-dotnet@v4 
+        with: 
+          dotnet-version: 10.0.x 
+      - run: dotnet restore ./<Proyecto>.slnx 
+      - run: dotnet build ./<Proyecto>.slnx --configuration Release --no-restore 
+      - run: dotnet test ./<Proyecto>.slnx --configuration Release --no-build 
+  
+  frontend: 
+    runs-on: ubuntu-latest 
+    defaults: 
+      run: 
+        working-directory: angular 
+    steps: 
+      - uses: actions/checkout@v4 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: corepack enable 
+      - run: yarn install --frozen-lockfile 
+      - run: yarn build 
+      - run: yarn test --watch=false --browsers=ChromeHeadless 
