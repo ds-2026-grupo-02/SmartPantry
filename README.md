@@ -13,10 +13,31 @@ Este repositorio corresponde al Trabajo Práctico Integrador de la asignatura De
 
 El trabajo práctico final consiste en desarrollar una aplicación web que ayude a las personas a consultar información pública de alimentos envasados, organizar una despensa personal y reconocer posibles incompatibilidades con sus preferencias alimentarias. La aplicación no brinda diagnóstico ni recomendación médica: presenta información proveniente de una fuente externa y la contrasta con preferencias configuradas por el usuario.
 
+## Cómo ejecutar
 ### Requisitos previos
 
-* [.NET10.0+ SDK](https://dotnet.microsoft.com/download/dotnet)
-* [Node v18 or 20](https://nodejs.org/en)
+- Visual Studio 2022 o 2026 con Desarrollo de ASP.NET y web
+- Node.js 24.15.0 o superior
+- Yarn 1.22.x
+- SQL Server Developer o Express
+- SQL Server Management Studio (SSMS)
+- ABP Studio
+- Git
+
+### Configuración local
+
+indicar los dos appsettings.json que contienen ConnectionStrings:Default y mostrar
+la cadena local utilizada para LocalDB o SQL Server Express. Si se usa una conexión con credenciales,
+documentar sólo el mecanismo User Secrets o ConnectionStrings__Default, sin publicar su valor.
+
+### Puesta en marcha
+
+Restaurar, ejecutar abp install-libs, instalar paquetes Angular, iniciar DbMigrator,
+HttpApi.Host y Angular, e informar las URLs locales reales del grupo.
+
+### Verificación 
+
+Comandos de build y test de .NET y Angular que el grupo ejecutó correctamente.
 
 ### Estructura de la solución
 
