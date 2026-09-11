@@ -1,33 +1,33 @@
-name: CI 
-  
-on: 
-  pull_request: 
-  push: 
-    branches: [main, stg, prod] 
-  
-jobs: 
-  backend: 
-    runs-on: ubuntu-latest 
-    steps: 
-      - uses: actions/checkout@v4 
-      - uses: actions/setup-dotnet@v4 
-        with: 
-          dotnet-version: 10.0.x 
-      - run: dotnet restore ./SmartPantry.slnx 
-      - run: dotnet build ./SmartPantry.slnx --configuration Release --no-restore 
-      - run: dotnet test ./SmartPantry.slnx --configuration Release --no-build 
-  
-  frontend: 
-    runs-on: ubuntu-latest 
-    defaults: 
-      run: 
-        working-directory: angular 
-    steps: 
-      - uses: actions/checkout@v4 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - run: corepack enable 
-      - run: yarn install --frozen-lockfile 
-      - run: yarn build 
-      - run: yarn test --watch=false
+name: CI
+
+on:
+ pull_request:
+ push:
+   branches: [main, stg, prod]
+
+jobs:
+ backend:
+   runs-on: ubuntu-latest
+   steps:
+     - uses: actions/checkout@v4
+     - uses: actions/setup-dotnet@v4
+       with:
+         dotnet-version: 10.0.x
+     - run: dotnet restore ./SmartPantry.slnx
+     - run: dotnet build ./SmartPantry.slnx --configuration Release --no-restore
+     - run: dotnet test ./SmartPantry.slnx --configuration Release --no-build
+
+ frontend:
+   runs-on: ubuntu-latest
+   defaults:
+     run:
+       working-directory: angular
+   steps:
+     - uses: actions/checkout@v4
+     - uses: actions/setup-node@v4
+       with:
+         node-version: 24
+     - run: corepack enable
+     - run: yarn install --frozen-lockfile
+     - run: yarn build
+     - run: yarn test --watch=false
