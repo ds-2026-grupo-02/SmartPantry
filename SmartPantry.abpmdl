@@ -1,0 +1,114 @@
+{
+  "template": "app",
+  "imports": {
+    "Volo.Abp.LeptonXLiteTheme": {
+      "version": "5.6.0",
+      "isInstalled": true,
+      "creationTime": "09/05/2026 12:26:28 +00:00"
+    },
+    "Volo.Abp.Account": {
+      "version": "10.6.0",
+      "isInstalled": true,
+      "creationTime": "09/05/2026 12:26:28 +00:00"
+    },
+    "Volo.Abp.OpenIddict": {
+      "version": "10.6.0",
+      "isInstalled": true,
+      "creationTime": "09/05/2026 12:26:28 +00:00"
+    },
+    "Volo.Abp.Identity": {
+      "version": "10.6.0",
+      "isInstalled": true,
+      "creationTime": "09/05/2026 12:26:28 +00:00"
+    },
+    "Volo.Abp.TenantManagement": {
+      "version": "10.6.0",
+      "isInstalled": true,
+      "creationTime": "09/05/2026 12:26:28 +00:00"
+    },
+    "Volo.Abp.SettingManagement": {
+      "version": "10.6.0",
+      "isInstalled": true,
+      "creationTime": "09/05/2026 12:26:28 +00:00"
+    },
+    "Volo.Abp.PermissionManagement": {
+      "version": "10.6.0",
+      "isInstalled": true,
+      "creationTime": "09/05/2026 12:26:28 +00:00"
+    },
+    "Volo.Abp.FeatureManagement": {
+      "version": "10.6.0",
+      "isInstalled": true,
+      "creationTime": "09/05/2026 12:26:28 +00:00"
+    },
+    "Volo.Abp.BlobStoring.Database": {
+      "version": "10.6.0",
+      "isInstalled": true,
+      "creationTime": "09/05/2026 12:26:28 +00:00"
+    }
+  },
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {}
+    }
+  },
+  "packages": {
+    "SmartPantry.Application": {
+      "path": "src/SmartPantry.Application/SmartPantry.Application.abppkg",
+      "folder": "src"
+    },
+    "SmartPantry.Application.Tests": {
+      "path": "test/SmartPantry.Application.Tests/SmartPantry.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "SmartPantry.Domain.Shared": {
+      "path": "src/SmartPantry.Domain.Shared/SmartPantry.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "SmartPantry.Application.Contracts": {
+      "path": "src/SmartPantry.Application.Contracts/SmartPantry.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "SmartPantry.HttpApi": {
+      "path": "src/SmartPantry.HttpApi/SmartPantry.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "SmartPantry.HttpApi.Client": {
+      "path": "src/SmartPantry.HttpApi.Client/SmartPantry.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "SmartPantry.EntityFrameworkCore.Tests": {
+      "path": "test/SmartPantry.EntityFrameworkCore.Tests/SmartPantry.EntityFrameworkCore.Tests.abppkg",
+      "folder": "test"
+    },
+    "SmartPantry.EntityFrameworkCore": {
+      "path": "src/SmartPantry.EntityFrameworkCore/SmartPantry.EntityFrameworkCore.abppkg",
+      "folder": "src"
+    },
+    "SmartPantry.TestBase": {
+      "path": "test/SmartPantry.TestBase/SmartPantry.TestBase.abppkg",
+      "folder": "test"
+    },
+    "SmartPantry.Domain.Tests": {
+      "path": "test/SmartPantry.Domain.Tests/SmartPantry.Domain.Tests.abppkg",
+      "folder": "test"
+    },
+    "SmartPantry.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/SmartPantry.HttpApi.Client.ConsoleTestApp/SmartPantry.HttpApi.Client.ConsoleTestApp.abppkg",
+      "folder": "test"
+    },
+    "SmartPantry.DbMigrator": {
+      "path": "src/SmartPantry.DbMigrator/SmartPantry.DbMigrator.abppkg",
+      "folder": "src"
+    },
+    "SmartPantry.HttpApi.Host": {
+      "path": "src/SmartPantry.HttpApi.Host/SmartPantry.HttpApi.Host.abppkg",
+      "folder": "src"
+    },
+    "SmartPantry.Domain": {
+      "path": "src/SmartPantry.Domain/SmartPantry.Domain.abppkg",
+      "folder": "src"
+    }
+  }
+}
