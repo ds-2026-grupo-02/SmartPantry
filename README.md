@@ -24,20 +24,75 @@ El trabajo práctico final consiste en desarrollar una aplicación web que ayude
 - ABP Studio
 - Git
 
-### Configuración local
+## Configuración Local
 
-indicar los dos appsettings.json que contienen ConnectionStrings:Default y mostrar
-la cadena local utilizada para LocalDB o SQL Server Express. Si se usa una conexión con credenciales,
-documentar sólo el mecanismo User Secrets o ConnectionStrings__Default, sin publicar su valor.
+La cadena de conexión base `ConnectionStrings:Default` está configurada en los siguientes archivos `appsettings.json`:
+
+1. `src/SmartPantry.DbMigrator/appsettings.json`
+2. `src/SmartPantry.HttpApi.Host/appsettings.json`
+
+### Cadena de conexión estándar (Instancia Local)
+
+Por defecto, el proyecto utiliza la instancia local de SQL Server Express:
+
+```text
+Server=localhost\\SQLEXPRESS;Database=SmartPantry;Trusted_Connection=True;TrustServerCertificate=True;
 
 ### Puesta en marcha
 
-Restaurar, ejecutar abp install-libs, instalar paquetes Angular, iniciar DbMigrator,
-HttpApi.Host y Angular, e informar las URLs locales reales del grupo.
+Para compilar y ejecutar la aplicación de forma local, siga estos pasos:
+
+1. Backend y Base de Datos (.NET)
+Abrir una consola en la raíz de la solución y restaurar las dependencias del backend:
+
+dotnet restore SmartPantry.slnx
+
+Instalar las librerías web requeridas por ABP Framework:
+
+abp install-libs
+
+Ejecutar la aplicación de migración para crear la base de datos SmartPantry y cargar los datos iniciales (seeding):
+
+dotnet run --project src/SmartPantry.DbMigrator/SmartPantry.DbMigrator.csproj
+
+Iniciar el host de la API Web:
+
+dotnet run --project src/SmartPantry.HttpApi.Host/SmartPantry.HttpApi.Host.csproj
+
+URL de la API / Swagger UI: https://localhost:44300
+
+2. Frontend (Angular)
+Navegar al directorio del cliente web:
+
+cd angular
+
+Instalar los paquetes de Node:
+
+yarn install
+
+Iniciar el servidor de desarrollo de Angular:
+
+yarn start
+
+URL de la Aplicación Web: http://localhost:4200`
 
 ### Verificación 
 
-Comandos de build y test de .NET y Angular que el grupo ejecutó correctamente.
+Comandos ejecutados y verificados para asegurar la calidad antes del despliegue en la integración continua:
+
+Backend (.NET)
+Compilar la solución completa:
+dotnet build SmartPantry.slnx --configuration Release
+
+Ejecutar suite de pruebas unitarias e integración:
+dotnet test SmartPantry.slnx --configuration Release --no-build
+
+Frontend (Angular)
+Compilar el cliente Angular:
+yarn build
+
+Ejecutar pruebas del cliente web:
+yarn test --watch=false --passWithNoTests
 
 ### Estructura de la solución
 
