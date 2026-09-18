@@ -21,8 +21,7 @@ public class ProductoAppService : ApplicationService, IProductoAppService
         var producto = new Producto(
             GuidGenerator.Create(),
             input.Nombre,
-            input.CodigoBarras,
-            input.Marca
+            input.CodigoBarras
         );
 
         // 2. Persistir a través del repositorio
