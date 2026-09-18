@@ -14,6 +14,7 @@ using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using SmartPantry.Productos;
 
 namespace SmartPantry.EntityFrameworkCore;
 
@@ -56,6 +57,7 @@ public class SmartPantryDbContext :
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
 
     #endregion
+    public DbSet<Producto> Productos { get; set; }
 
     public SmartPantryDbContext(DbContextOptions<SmartPantryDbContext> options)
         : base(options)
@@ -87,5 +89,18 @@ public class SmartPantryDbContext :
         //    b.ConfigureByConvention(); //auto configure for the base class props
         //    //...
         //});
+        builder.Entity<Producto>(b =>
+        {
+            b.ToTable("Productos"); // Nombre de la tabla en SQL Server
+            b.ConfigureByConvention(); // Mapea Id y miembros por defecto de ABP
+
+            b.Property(x => x.Nombre)
+             .IsRequired()
+             .HasMaxLength(ProductoConsts.MaxNombreLength);
+
+            b.Property(x => x.CodigoBarras)
+             .IsRequired()
+             .HasMaxLength(ProductoConsts.MaxCodigoBarrasLength);
+        });
     }
 }
