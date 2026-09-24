@@ -15,7 +15,7 @@ jobs:
          dotnet-version: 10.0.x
      - run: dotnet restore ./SmartPantry.slnx
      - run: dotnet build ./SmartPantry.slnx --configuration Release --no-restore
-     - run: dotnet test ./SmartPantry.slnx --configuration Release --no-build
+     - run: dotnet test ./SmartPantry.slnx --configuration Release --no-build --no-restore
 
  frontend:
    runs-on: ubuntu-latest
