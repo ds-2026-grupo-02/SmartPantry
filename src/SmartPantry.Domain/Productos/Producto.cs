@@ -20,6 +20,13 @@ public class Producto : AggregateRoot<Guid>
         SetCodigoBarras(codigoBarras);
     }
 
+    public void ModificarDatos(string nombre, string codigoBarras)
+    {
+        SetNombre(nombre);
+        SetCodigoBarras(codigoBarras);
+    }
+
+
     public void SetNombre(string nombre)
     {
         Check.NotNullOrWhiteSpace(nombre, nameof(nombre));
