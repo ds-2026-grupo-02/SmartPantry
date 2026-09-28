@@ -12,3 +12,5 @@ public partial class SmartPantryApplicationMappers : MapperBase<Producto, Produc
 
     public override partial void Map(Producto source, ProductoDto destination);
 }
+
+
