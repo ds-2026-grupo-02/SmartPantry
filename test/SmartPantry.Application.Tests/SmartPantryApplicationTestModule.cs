@@ -1,4 +1,7 @@
-﻿using Volo.Abp.Modularity;
+using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
+using SmartPantry.Productos;
+using Volo.Abp.Modularity;
 
 namespace SmartPantry;
 
@@ -8,5 +11,8 @@ namespace SmartPantry;
 )]
 public class SmartPantryApplicationTestModule : AbpModule
 {
-
+    public override void ConfigureServices(ServiceConfigurationContext context)
+    {
+        context.Services.AddSingleton(Substitute.For<IExternalProductCatalogClient>());
+    }
 }
