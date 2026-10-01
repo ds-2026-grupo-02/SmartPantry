@@ -39,6 +39,7 @@ using Volo.Abp.OpenIddict;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.Studio.Client.AspNetCore;
 using Volo.Abp.Security.Claims;
+using SmartPantry.Productos;
 
 namespace SmartPantry;
 
@@ -127,6 +128,19 @@ public class SmartPantryHttpApiHostModule : AbpModule
         ConfigureSwagger(context, configuration);
         ConfigureVirtualFileSystem(context);
         ConfigureCors(context, configuration);
+
+        // Configuración de IHttpClientFactory para la API externa de Open Food Facts
+        context.Services.AddHttpClient<IExternalProductCatalogClient, OpenFoodFactsProductCatalogClient>(client =>
+        {
+            // 1. URL base de la API v3 de Open Food Facts
+            client.BaseAddress = new Uri("https://world.openfoodfacts.org/");
+
+            // 2. Timeout de espera de la petición
+            client.Timeout = TimeSpan.FromSeconds(10);
+
+            // 3. User-Agent obligatorio para identificarse responsablemente ante el proveedor
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("SmartPantryUTN/1.0 (contacto@smartpantry.local)");
+        });
     }
 
     private void ConfigureStudio(IHostEnvironment hostingEnvironment)
