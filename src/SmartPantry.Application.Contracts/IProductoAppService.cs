@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
@@ -10,4 +11,6 @@ public interface IProductoAppService :
         Guid, // Primary key of the product entity
         PagedAndSortedResultRequestDto, // Used for paging/sorting
         CreateUpdateProductoDto> // Used to create/update a product>
-{ }
+{
+    Task<ExternalProductDto?> SearchByBarcodeAsync(SearchProductInputDto input);
+}
