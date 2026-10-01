@@ -31,6 +31,7 @@ public class ProductoAppService_ExternalSearch_Tests
         var mockExternalDto = new ExternalProductDto
         {
             Nombre = "Nutella",
+            NombreEs = "Nutella",
             Marca = "Ferrero",
             ImagenUrl = "https://images.openfoodfacts.org/nutella.jpg"
         };
@@ -41,6 +42,7 @@ public class ProductoAppService_ExternalSearch_Tests
         var result = await _productoAppService.SearchByBarcodeAsync(new SearchProductInputDto { CodigoBarras = barcodeValido });
         result.ShouldNotBeNull();
         result.Nombre.ShouldBe("Nutella");
+        result.NombreEs.ShouldBe("Nutella");
         result.Marca.ShouldBe("Ferrero");
     }
 
@@ -95,6 +97,7 @@ public class ProductoAppService_ExternalSearch_Tests
         // Assert: los campos ausentes deben permanecer nulos (no inventar valores)
         result.ShouldNotBeNull();
         result.Nombre.ShouldBe("Galletitas");
+        result.NombreEs.ShouldBeNull();
         result.Marca.ShouldBeNull();
         result.ImagenUrl.ShouldBeNull();
     }
