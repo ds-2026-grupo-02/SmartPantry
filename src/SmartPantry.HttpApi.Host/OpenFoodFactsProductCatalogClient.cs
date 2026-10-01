@@ -1,16 +1,16 @@
-﻿using System;
+﻿using SmartPantry.Productos;
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.DependencyInjection;
-using SmartPantry.Productos;
 
 namespace SmartPantry.Productos;
 
-// TransientDependency le indica a ABP que registre automáticamente esta clase en el contenedor DI
 public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
 {
     private readonly HttpClient _httpClient;
@@ -29,7 +29,8 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
         }
 
         // Endpoint v3 de Open Food Facts para buscar por código de barras
-        var requestUri = $"api/v3/product/{barcode}.json?fields=product_name,brands,image_url";
+        const string fields = "code,product_name,product_name_es,brands,image_front_url";
+        var requestUri = $"product/{Uri.EscapeDataString(barcode)}?fields={Uri.EscapeDataString(fields)}";
 
         try
         {
@@ -41,8 +42,14 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
                 return null;
             }
 
-            // Asegura que no haya fallas de red / servidor HTTP
-            response.EnsureSuccessStatusCode();
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                throw new UserFriendlyException("Open Food Facts limitó temporalmente las consultas. Por favor, intente más tarde.");
+            }
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new UserFriendlyException($"Open Food Facts devolvió un error inesperado (HTTP {(int)response.StatusCode}).");
+            }
 
             // Deserializa la respuesta cruda de la API externa
             var offResponse = await response.Content.ReadFromJsonAsync<OpenFoodFactsApiResponse>();
@@ -57,14 +64,18 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
             return new ExternalProductDto
             {
                 Nombre = string.IsNullOrWhiteSpace(offResponse.Product.ProductName) ? null : offResponse.Product.ProductName.Trim(),
+                NombreEs = string.IsNullOrWhiteSpace(offResponse.Product.ProductNameEs) ? null : offResponse.Product.ProductNameEs.Trim(),
                 Marca = string.IsNullOrWhiteSpace(offResponse.Product.Brands) ? null : offResponse.Product.Brands.Trim(),
-                ImagenUrl = string.IsNullOrWhiteSpace(offResponse.Product.ImageUrl) ? null : offResponse.Product.ImageUrl.Trim()
+                ImagenUrl = string.IsNullOrWhiteSpace(offResponse.Product.ImageFrontUrl) ? null : offResponse.Product.ImageFrontUrl.Trim()
             };
+        }
+        catch (TaskCanceledException)
+        {
+            throw new UserFriendlyException("La consulta a Open Food Facts excedió el tiempo de espera.");
         }
         catch (HttpRequestException)
         {
-            // En caso de fallas de red o límites de uso de la API externa
-            throw;
+            throw new UserFriendlyException("No se pudo conectar con el catálogo externo de Open Food Facts.");
         }
     }
 
@@ -83,11 +94,14 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
         [JsonPropertyName("product_name")]
         public string? ProductName { get; set; }
 
+        [JsonPropertyName("product_name_es")]
+        public string? ProductNameEs { get; set; }
+
         [JsonPropertyName("brands")]
         public string? Brands { get; set; }
 
-        [JsonPropertyName("image_url")]
-        public string? ImageUrl { get; set; }
+        [JsonPropertyName("image_front_url")]
+        public string? ImageFrontUrl { get; set; }
     }
     #endregion
 }

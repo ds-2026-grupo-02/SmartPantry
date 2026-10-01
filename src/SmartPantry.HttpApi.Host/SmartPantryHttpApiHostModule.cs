@@ -133,13 +133,13 @@ public class SmartPantryHttpApiHostModule : AbpModule
         context.Services.AddHttpClient<IExternalProductCatalogClient, OpenFoodFactsProductCatalogClient>(client =>
         {
             // 1. URL base de la API v3 de Open Food Facts
-            client.BaseAddress = new Uri("https://world.openfoodfacts.org/");
+            client.BaseAddress = new Uri("https://world.openfoodfacts.org/api/v3/");
 
             // 2. Timeout de espera de la petición
-            client.Timeout = TimeSpan.FromSeconds(10);
+            client.Timeout = TimeSpan.FromSeconds(15);
 
             // 3. User-Agent obligatorio para identificarse responsablemente ante el proveedor
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("SmartPantryUTN/1.0 (contacto@smartpantry.local)");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("SmartPantryUTN/1.0 (+https://github.com/ds-2026-grupo-02/SmartPantry)");
         });
     }
 
