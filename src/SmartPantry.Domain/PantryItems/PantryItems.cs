@@ -36,4 +36,9 @@ public class PantryItem : FullAuditedAggregateRoot<Guid>
     {
         FechaVencimiento = newExpirationDate;
     }
+    public void MarcarComoConsumido()
+    {
+        EsConsumido = true;
+        Cantidad = 0;
+    }
 }
