@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
+using Volo.Abp.BackgroundWorkers; // Requerido para context.AddBackgroundWorkerAsync
+using SmartPantry.Warnings;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
@@ -266,9 +269,7 @@ public class SmartPantryHttpApiHostModule : AbpModule
     {
         context.Services.AddSmartPantryHealthChecks();
     }
-
-
-    public override void OnApplicationInitialization(ApplicationInitializationContext context)
+    public override async Task OnApplicationInitializationAsync(ApplicationInitializationContext context)
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
@@ -315,5 +316,9 @@ public class SmartPantryHttpApiHostModule : AbpModule
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();
+
+        // Registra el Background Worker para que se ejecute periódicamente cuando el Host esté corriendo
+        await context.AddBackgroundWorkerAsync<ExpirationWorker>();
     }
 }
+
