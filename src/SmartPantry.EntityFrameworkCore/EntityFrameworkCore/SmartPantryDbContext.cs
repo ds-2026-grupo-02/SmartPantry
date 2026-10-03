@@ -83,6 +83,16 @@ public class SmartPantryDbContext :
              .HasMaxLength(ProductoConsts.MaxCodigoBarrasLength);
         });
 
+        builder.Entity<PantryItem>(b =>
+        {
+            b.ToTable("AppPantryItems");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Unidad)
+             .IsRequired()
+             .HasMaxLength(32);
+        });
+
         builder.Entity<ExpirationWarning>(b =>
         {
             b.ToTable("AppExpirationWarnings");
