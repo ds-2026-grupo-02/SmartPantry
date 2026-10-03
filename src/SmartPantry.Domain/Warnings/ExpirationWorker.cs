@@ -24,11 +24,19 @@ public class ExpirationWorker : AsyncPeriodicBackgroundWorkerBase
     {
         Logger.LogInformation("Iniciando verificación periódica de vencimientos en despensa...");
 
-        // Resolver el servicio de dominio desde el alcance de la ejecución (Scope)
-        var warningManager = workerContext.ServiceProvider.GetRequiredService<ExpirationWarningManager>();
+        try
+        {
+            // Resolver el servicio de dominio desde el alcance de la ejecución (Scope)
+            var warningManager = workerContext.ServiceProvider.GetRequiredService<ExpirationWarningManager>();
 
-        await warningManager.ProcessExpirationsAsync(DateTime.UtcNow);
+            await warningManager.ProcessExpirationsAsync(DateTime.UtcNow);
 
-        Logger.LogInformation("Procesamiento de vencimientos finalizado exitosamente.");
+            Logger.LogInformation("Procesamiento de vencimientos finalizado exitosamente.");
+        }
+        catch (Exception ex)
+        {
+            // Se registra el error sin relanzar la excepción para no detener futuras ejecuciones del worker
+            Logger.LogError(ex, "Ocurrió un error durante el procesamiento periódico de vencimientos.");
+        }
     }
 }
