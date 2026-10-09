@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Shouldly;
+using SmartPantry.PantryItems;
+using SmartPantry.Productos;
+using SmartPantry.Warnings;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
-using SmartPantry.PantryItems;
-using SmartPantry.Warnings;
-using Shouldly;
 using Volo.Abp.Domain.Repositories;
 using Xunit;
 
@@ -154,6 +155,45 @@ public class ExpirationWarningManager_Tests : SmartPantryEntityFrameworkCoreTest
             var warnings = await _expirationWarningRepository.GetListAsync(x => x.PantryItemId == itemId);
             warnings.Count.ShouldBe(1); // Sigue habiendo un único registro
             warnings.First().IsActive.ShouldBeTrue(); // Reactivada
+        });
+    }
+
+    // Cuando un producto con advertencia activa se marca como consumido,
+    // la advertencia pasa efectivamente a IsActive = false.
+    [Fact]
+    public async Task Should_Deactivate_Warning_When_Item_Is_Marked_As_Consumed()
+    {
+        var referenceDateUtc = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc);
+        var itemId = Guid.NewGuid();
+
+        // 1. Ítem activo dentro del umbral -> Genera advertencia
+        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), 1, "Unidad", referenceDateUtc.AddDays(2));
+        await WithUnitOfWorkAsync(async () => await _pantryItemRepository.InsertAsync(item));
+        await WithUnitOfWorkAsync(async () => await _warningManager.ProcessExpirationsAsync(referenceDateUtc, thresholdDays: 3));
+
+        // Verificamos que la advertencia esté activa
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var warnings = await _expirationWarningRepository.GetListAsync(x => x.PantryItemId == itemId);
+            warnings.Count.ShouldBe(1);
+            warnings.First().IsActive.ShouldBeTrue();
+        });
+
+        // 2. Se consume el ítem -> Se ejecuta el manager nuevamente
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var dbItem = await _pantryItemRepository.GetAsync(itemId);
+            dbItem.MarcarComoConsumido();
+            await _pantryItemRepository.UpdateAsync(dbItem);
+        });
+        await WithUnitOfWorkAsync(async () => await _warningManager.ProcessExpirationsAsync(referenceDateUtc, thresholdDays: 3));
+
+        // 3. Comprobamos que la advertencia fue desactivada
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var warnings = await _expirationWarningRepository.GetListAsync(x => x.PantryItemId == itemId);
+            warnings.Count.ShouldBe(1);
+            warnings.First().IsActive.ShouldBeFalse();
         });
     }
 }
