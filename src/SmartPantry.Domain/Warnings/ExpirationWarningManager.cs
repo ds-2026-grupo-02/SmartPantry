@@ -22,26 +22,36 @@ public class ExpirationWarningManager : DomainService
 
     public async Task ProcessExpirationsAsync(DateTime referenceDateUtc, int thresholdDays = 3)
     {
-        // 1. Consultar ítems de despensa no consumidos y con fecha de vencimiento definida
-        var items = await _pantryItemRepository.GetListAsync(x => !x.EsConsumido && x.FechaVencimiento.HasValue);
+        // 1. Consultar todos los ítems de despensa para evaluar activos, consumidos o sin fecha
+        var items = await _pantryItemRepository.GetListAsync();
+        const string warningType = "VencimientoProximo";
 
         foreach (var item in items)
         {
-            var expirationDate = item.FechaVencimiento!.Value.Date;
-            var daysUntilExpiration = (expirationDate - referenceDateUtc.Date).Days;
-            const string warningType = "VencimientoProximo";
-
             // Buscar la advertencia existente directamente de forma asíncrona
             var existingWarning = await _expirationWarningRepository.FirstOrDefaultAsync(
                 x => x.PantryItemId == item.Id && x.WarningType == warningType
             );
 
-            // 2. Si está dentro del umbral (ej. entre 0 y 3 días de vencer)
+            // 2. Si el ítem está consumido o no tiene fecha de vencimiento definida, no debe tener advertencia activa
+            if (item.EsConsumido || !item.FechaVencimiento.HasValue)
+            {
+                if (existingWarning != null && existingWarning.IsActive)
+                {
+                    existingWarning.Deactivate();
+                    await _expirationWarningRepository.UpdateAsync(existingWarning, autoSave: true);
+                }
+                continue;
+            }
+
+            var expirationDate = item.FechaVencimiento.Value.Date;
+            var daysUntilExpiration = (expirationDate - referenceDateUtc.Date).Days;
+
+            // 3. Si está dentro del umbral (ej. entre 0 y 3 días de vencer, considerando día límite)
             if (daysUntilExpiration <= thresholdDays && daysUntilExpiration >= 0)
             {
                 if (existingWarning == null)
                 {
-                    // Crear nueva advertencia (autoSave: true fuerza a persistir los cambios inmediatamente para mantener idempotencia en BD)
                     var newWarning = new ExpirationWarning(
                         GuidGenerator.Create(),
                         item.UserId,
@@ -53,14 +63,13 @@ public class ExpirationWarningManager : DomainService
                 }
                 else if (!existingWarning.IsActive || existingWarning.ExpirationDate != item.FechaVencimiento)
                 {
-                    // Recomponer/Actualizar la advertencia si cambió la fecha o estaba inactiva
                     existingWarning.Reactivate(item.FechaVencimiento);
                     await _expirationWarningRepository.UpdateAsync(existingWarning, autoSave: true);
                 }
             }
             else
             {
-                // 3. Si ya no está dentro del umbral o cambió de fecha lejana, desactivarla
+                // 4. Si ya no está dentro del umbral (ej. vencido < 0 o fecha lejana > thresholdDays)
                 if (existingWarning != null && existingWarning.IsActive)
                 {
                     existingWarning.Deactivate();
