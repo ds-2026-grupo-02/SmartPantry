@@ -224,5 +224,60 @@ public class ExpirationWarningManager_Tests : SmartPantryEntityFrameworkCoreTest
             warnings.First().IsActive.ShouldBeFalse();
         });
     }
+    
+    // Reactivación de una advertencia previamente desactivada
+    [Fact]
+    public async Task Should_Reactivate_Deactivated_Warning_When_Item_Is_Back_In_Threshold()
+    {
+        var referenceDateUtc = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc);
+        var itemId = Guid.NewGuid();
+
+        // Paso 1: Ítem próximo a vencer (+1 día) -> Se genera advertencia activa
+        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), 1, "Unidad", referenceDateUtc.AddDays(1));
+        await WithUnitOfWorkAsync(async () => await _pantryItemRepository.InsertAsync(item));
+        await WithUnitOfWorkAsync(async () => await _warningManager.ProcessExpirationsAsync(referenceDateUtc, thresholdDays: 3));
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var warnings = await _expirationWarningRepository.GetListAsync(x => x.PantryItemId == itemId);
+            warnings.Count.ShouldBe(1);
+            warnings.First().IsActive.ShouldBeTrue();
+        });
+
+        // Paso 2: Se posterga la fecha fuera del umbral (+20 días) -> La advertencia se desactiva
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var dbItem = await _pantryItemRepository.GetAsync(itemId);
+            dbItem.UpdateExpirationDate(referenceDateUtc.AddDays(20));
+            await _pantryItemRepository.UpdateAsync(dbItem);
+        });
+        await WithUnitOfWorkAsync(async () => await _warningManager.ProcessExpirationsAsync(referenceDateUtc, thresholdDays: 3));
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var warnings = await _expirationWarningRepository.GetListAsync(x => x.PantryItemId == itemId);
+            warnings.Count.ShouldBe(1);
+            warnings.First().IsActive.ShouldBeFalse(); // Comprobamos que quedó desactivada
+        });
+
+        // Paso 3: La fecha vuelve a estar dentro del umbral (+2 días) -> La MISMA advertencia debe reactivarse
+        var reactivatedExpirationDate = referenceDateUtc.AddDays(2);
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var dbItem = await _pantryItemRepository.GetAsync(itemId);
+            dbItem.UpdateExpirationDate(reactivatedExpirationDate);
+            await _pantryItemRepository.UpdateAsync(dbItem);
+        });
+        await WithUnitOfWorkAsync(async () => await _warningManager.ProcessExpirationsAsync(referenceDateUtc, thresholdDays: 3));
+
+        // Paso 4: Verificamos que se reactivó y que no se duplicó el registro en la base
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var warnings = await _expirationWarningRepository.GetListAsync(x => x.PantryItemId == itemId);
+            warnings.Count.ShouldBe(1); // Sigue existiendo un único registro (idempotencia)
+            warnings.First().IsActive.ShouldBeTrue(); // Reactivada
+            warnings.First().ExpirationDate.ShouldBe(reactivatedExpirationDate); // Con la nueva fecha
+        });
+    }
 }
 
