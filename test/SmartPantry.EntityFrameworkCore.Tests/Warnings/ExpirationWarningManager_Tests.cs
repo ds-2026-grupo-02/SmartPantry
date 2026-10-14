@@ -115,46 +115,36 @@ public class ExpirationWarningManager_Tests : SmartPantryEntityFrameworkCoreTest
 
     // 4. REQUERIMIENTO: Ciclo completo (Actualización, Desactivación y Reactivación)
     [Fact]
-    public async Task Should_Deactivate_And_Reactivate_Same_Warning_When_Date_Changes()
+    public async Task Should_Update_Warning_Expiration_Date_When_Item_Date_Changes()
     {
         var referenceDateUtc = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc);
         var itemId = Guid.NewGuid();
+        var initialExpiration = referenceDateUtc.AddDays(1);
+        var updatedExpiration = referenceDateUtc.AddDays(2); // Ambas dentro del umbral de 3 días
 
-        // Paso A: Crear ítem próximo a vencer -> genera advertencia activa
-        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), 1, "Unidad", referenceDateUtc.AddDays(1));
+        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), 1, "Unidad", initialExpiration);
         await WithUnitOfWorkAsync(async () => await _pantryItemRepository.InsertAsync(item));
+
+        // 1. Generar advertencia inicial
         await WithUnitOfWorkAsync(async () => await _warningManager.ProcessExpirationsAsync(referenceDateUtc, thresholdDays: 3));
 
-        // Paso B: Extender fecha fuera del umbral (+20 días) -> Desactivación
+        // 2. Cambiar la fecha de vencimiento del ítem (sigue dentro del umbral)
         await WithUnitOfWorkAsync(async () =>
         {
             var dbItem = await _pantryItemRepository.GetAsync(itemId);
-            dbItem.UpdateExpirationDate(referenceDateUtc.AddDays(20));
+            dbItem.UpdateExpirationDate(updatedExpiration);
             await _pantryItemRepository.UpdateAsync(dbItem);
         });
+
+        // 3. Procesar nuevamente
         await WithUnitOfWorkAsync(async () => await _warningManager.ProcessExpirationsAsync(referenceDateUtc, thresholdDays: 3));
 
+        // 4. Comprobar que la advertencia actualizó su fecha y sigue siendo única
         await WithUnitOfWorkAsync(async () =>
         {
             var warnings = await _expirationWarningRepository.GetListAsync(x => x.PantryItemId == itemId);
             warnings.Count.ShouldBe(1);
-            warnings.First().IsActive.ShouldBeFalse(); // Desactivada
-        });
-
-        // Paso C: Volver a acercar la fecha (+2 días) -> Reactivación de la MISMA advertencia
-        await WithUnitOfWorkAsync(async () =>
-        {
-            var dbItem = await _pantryItemRepository.GetAsync(itemId);
-            dbItem.UpdateExpirationDate(referenceDateUtc.AddDays(2));
-            await _pantryItemRepository.UpdateAsync(dbItem);
-        });
-        await WithUnitOfWorkAsync(async () => await _warningManager.ProcessExpirationsAsync(referenceDateUtc, thresholdDays: 3));
-
-        await WithUnitOfWorkAsync(async () =>
-        {
-            var warnings = await _expirationWarningRepository.GetListAsync(x => x.PantryItemId == itemId);
-            warnings.Count.ShouldBe(1); // Sigue habiendo un único registro
-            warnings.First().IsActive.ShouldBeTrue(); // Reactivada
+            warnings.First().ExpirationDate.ShouldBe(updatedExpiration);
         });
     }
 
@@ -196,4 +186,43 @@ public class ExpirationWarningManager_Tests : SmartPantryEntityFrameworkCoreTest
             warnings.First().IsActive.ShouldBeFalse();
         });
     }
+   
+
+    [Fact]
+    public async Task Should_Deactivate_Warning_When_Item_Becomes_Undated()
+    {
+        var referenceDateUtc = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc);
+        var itemId = Guid.NewGuid();
+        var pantryItem = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), 1m, "Unidad", referenceDateUtc.AddDays(2));
+
+        await WithUnitOfWorkAsync(async () =>
+        {
+            await _pantryItemRepository.InsertAsync(pantryItem);
+        });
+
+        // 1. Generar advertencia inicial
+        await WithUnitOfWorkAsync(async () =>
+            await _warningManager.ProcessExpirationsAsync(referenceDateUtc, thresholdDays: 3));
+
+        // 2. Quitamos la fecha de vencimiento (ítem sin fecha: null)
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var dbItem = await _pantryItemRepository.GetAsync(itemId);
+            dbItem.UpdateExpirationDate(null);
+            await _pantryItemRepository.UpdateAsync(dbItem);
+        });
+
+        // 3. Procesar nuevamente
+        await WithUnitOfWorkAsync(async () =>
+            await _warningManager.ProcessExpirationsAsync(referenceDateUtc, thresholdDays: 3));
+
+        // 4. Comprobamos que la advertencia se desactiva
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var warnings = await _expirationWarningRepository.GetListAsync(x => x.PantryItemId == itemId);
+            warnings.Count.ShouldBe(1);
+            warnings.First().IsActive.ShouldBeFalse();
+        });
+    }
 }
+
