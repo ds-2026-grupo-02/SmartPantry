@@ -1,10 +1,14 @@
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SmartPantry.Localization;
 using SmartPantry.MultiTenancy;
-using System;
+using SmartPantry.Warnings;
+//using System;
+using Volo.Abp;
 using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
+using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.PermissionManagement.Identity;
 using Volo.Abp.SettingManagement;
@@ -34,7 +38,8 @@ namespace SmartPantry;
     typeof(AbpIdentityDomainModule),
     typeof(AbpOpenIddictDomainModule),
     typeof(AbpTenantManagementDomainModule),
-    typeof(BlobStoringDatabaseDomainModule)    )]
+    typeof(BlobStoringDatabaseDomainModule),
+    typeof(AbpBackgroundWorkersModule)    )]
 public class SmartPantryDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
@@ -50,4 +55,5 @@ public class SmartPantryDomainModule : AbpModule
         context.Services.Replace(ServiceDescriptor.Singleton<IEmailSender, NullEmailSender>());
 #endif
     }
+    
 }

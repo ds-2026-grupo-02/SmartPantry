@@ -1,4 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using SmartPantry.PantryItems;
+using SmartPantry.Productos;
+using SmartPantry.Warnings; // Importante para ExpirationWarning
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.BlobStoring.Database.EntityFrameworkCore;
@@ -9,12 +12,11 @@ using Volo.Abp.EntityFrameworkCore.Modeling;
 using Volo.Abp.FeatureManagement.EntityFrameworkCore;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.EntityFrameworkCore;
+using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
-using Volo.Abp.OpenIddict.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
-using SmartPantry.Productos;
 
 namespace SmartPantry.EntityFrameworkCore;
 
@@ -26,23 +28,7 @@ public class SmartPantryDbContext :
     ITenantManagementDbContext,
     IIdentityDbContext
 {
-    /* Add DbSet properties for your Aggregate Roots / Entities here. */
-
-
-    #region Entities from the modules
-
-    /* Notice: We only implemented IIdentityProDbContext and ISaasDbContext
-     * and replaced them for this DbContext. This allows you to perform JOIN
-     * queries for the entities of these modules over the repositories easily. You
-     * typically don't need that for other modules. But, if you need, you can
-     * implement the DbContext interface of the needed module and use ReplaceDbContext
-     * attribute just like IIdentityProDbContext and ISaasDbContext.
-     *
-     * More info: Replacing a DbContext of a module ensures that the related module
-     * uses this DbContext on runtime. Otherwise, it will use its own DbContext class.
-     */
-
-    // Identity
+    /* Identity */
     public DbSet<IdentityUser> Users { get; set; }
     public DbSet<IdentityRole> Roles { get; set; }
     public DbSet<IdentityClaimType> ClaimTypes { get; set; }
@@ -52,12 +38,14 @@ public class SmartPantryDbContext :
     public DbSet<IdentityUserDelegation> UserDelegations { get; set; }
     public DbSet<IdentitySession> Sessions { get; set; }
 
-    // Tenant Management
+    /* Tenant Management */
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
 
-    #endregion
+    /* Entidades Propias del Dominio */
     public DbSet<Producto> Productos { get; set; }
+    public DbSet<PantryItem> PantryItems { get; set; } // Agregado si ya tienes la entidad de ítems de despensa
+    public DbSet<ExpirationWarning> ExpirationWarnings { get; set; } // Propiedad DbSet requerida por EF Core
 
     public SmartPantryDbContext(DbContextOptions<SmartPantryDbContext> options)
         : base(options)
@@ -69,8 +57,7 @@ public class SmartPantryDbContext :
     {
         base.OnModelCreating(builder);
 
-        /* Include modules to your migration db context */
-
+        /* Configuración de módulos ABP */
         builder.ConfigurePermissionManagement();
         builder.ConfigureSettingManagement();
         builder.ConfigureBackgroundJobs();
@@ -81,18 +68,11 @@ public class SmartPantryDbContext :
         builder.ConfigureTenantManagement();
         builder.ConfigureBlobStoring();
 
-        /* Configure your own tables/entities inside here */
-
-        //builder.Entity<YourEntity>(b =>
-        //{
-        //    b.ToTable(SmartPantryConsts.DbTablePrefix + "YourEntities", SmartPantryConsts.DbSchema);
-        //    b.ConfigureByConvention(); //auto configure for the base class props
-        //    //...
-        //});
+        /* Mapeo de Entidades */
         builder.Entity<Producto>(b =>
         {
-            b.ToTable("Productos"); // Nombre de la tabla en SQL Server
-            b.ConfigureByConvention(); // Mapea Id y miembros por defecto de ABP
+            b.ToTable("Productos");
+            b.ConfigureByConvention();
 
             b.Property(x => x.Nombre)
              .IsRequired()
@@ -101,6 +81,30 @@ public class SmartPantryDbContext :
             b.Property(x => x.CodigoBarras)
              .IsRequired()
              .HasMaxLength(ProductoConsts.MaxCodigoBarrasLength);
+        });
+
+        builder.Entity<PantryItem>(b =>
+        {
+            b.ToTable("AppPantryItems");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Unidad)
+             .IsRequired()
+             .HasMaxLength(32);
+        });
+
+        builder.Entity<ExpirationWarning>(b =>
+        {
+            b.ToTable("AppExpirationWarnings");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.WarningType)
+             .IsRequired()
+             .HasMaxLength(64);
+
+            // Índice único compuesto para asegurar la idempotencia requerida en el TP08
+            b.HasIndex(x => new { x.PantryItemId, x.WarningType })
+             .IsUnique();
         });
     }
 }
