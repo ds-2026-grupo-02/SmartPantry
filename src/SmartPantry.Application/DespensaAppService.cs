@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using SmartPantry.Productos;
 using System;
 using System.Collections.Generic;
@@ -40,7 +40,7 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
             userQuery.Skip(input.SkipCount).Take(input.MaxResultCount)
         );
 
-        var dtos = ObjectMapper.Map<List<PantryItem>, List<DespensaDto>>(items);
+        var dtos = items.Select(x => ObjectMapper.Map<PantryItem, DespensaDto>(x)).ToList();
 
         // Completar el nombre del producto si aplica
         foreach (var dto in dtos)
@@ -53,6 +53,29 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
         }
 
         return new PagedResultDto<DespensaDto>(totalCount, dtos);
+    }
+
+    public async Task<DespensaDto> CreateAsync(CreateDespensaDto input)
+    {
+        var currentUserId = CurrentUser.GetId();
+
+        // Validar que el producto exista (lanza EntityNotFoundException/404 si no existe)
+        var producto = await _productoRepository.GetAsync(input.ProductoId);
+
+        var item = new PantryItem(
+            GuidGenerator.Create(),
+            currentUserId,
+            input.ProductoId,
+            input.Cantidad,
+            input.Unidad ?? string.Empty,
+            input.FechaVencimiento
+        );
+
+        await _pantryItemRepository.InsertAsync(item);
+
+        var dto = ObjectMapper.Map<PantryItem, DespensaDto>(item);
+        dto.NombreProducto = producto.Nombre;
+        return dto;
     }
 
     public async Task<DespensaDto> UpdateAsync(Guid id, UpdateDespensaDto input)
