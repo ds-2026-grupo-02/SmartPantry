@@ -45,8 +45,17 @@
             </td>
             <td>
               <button class="btn btn-sm btn-primary me-1" (click)="openEditModal(item)">Editar</button>
-              <button class="btn btn-sm btn-success me-1" (click)="marcarConsumido(item.id)">Consumir</button>
-              <button class="btn btn-sm btn-danger" (click)="deleteItem(item.id)">Eliminar</button>
+              <button class="btn btn-sm btn-success me-1"
+                      *ngIf="item.id"
+                      (click)="marcarConsumido(item.id)">
+                Consumir
+              </button>
+
+              <button class="btn btn-sm btn-danger"
+                      *ngIf="item.id"
+                      (click)="deleteItem(item.id)">
+                Eliminar
+              </button>
             </td>
           </tr>
         </tbody>

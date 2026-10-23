@@ -55,7 +55,7 @@ export class PantryComponent implements OnInit {
     this.list.hookToQuery(streamCreator).subscribe({
       next: (response) => {
         this.items = response.items ?? [];
-        this.totalCount = response.totalCount;
+        this.totalCount = response?.totalCount ?? 0;
         this.isLoading = false;
       },
       error: () => {
