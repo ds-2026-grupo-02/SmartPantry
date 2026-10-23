@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ListService, LocalizationModule } from '@abp/ng.core';
@@ -29,13 +29,14 @@ export class PantryComponent implements OnInit {
   constructor(
     public readonly list: ListService,
     private despensaService: DespensaService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {
     this.buildForm();
   }
 
   ngOnInit(): void {
-    this.loadItems();
+    this.hookList();
   }
 
   buildForm() {
@@ -46,9 +47,25 @@ export class PantryComponent implements OnInit {
     });
   }
 
-  loadItems() {
+  hookList() {
     this.isLoading = true;
     this.hasError = false;
+
+    this.list.isLoading$.subscribe(loading => {
+      this.isLoading = loading;
+      this.cdr.detectChanges();
+    });
+
+    this.list.requestStatus$.subscribe(status => {
+      if (status === 'error') {
+        this.hasError = true;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      } else if (status === 'success') {
+        this.hasError = false;
+        this.cdr.detectChanges();
+      }
+    });
 
     const streamCreator = (query: any) => this.despensaService.getList(query);
 
@@ -57,12 +74,19 @@ export class PantryComponent implements OnInit {
         this.items = response.items ?? [];
         this.totalCount = response?.totalCount ?? 0;
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: () => {
         this.hasError = true;
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
     });
+  }
+
+  loadItems() {
+    this.hasError = false;
+    this.list.get();
   }
 
   openEditModal(item: DespensaDto) {
