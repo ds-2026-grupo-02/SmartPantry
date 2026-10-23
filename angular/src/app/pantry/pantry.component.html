@@ -1,0 +1,91 @@
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h3>{{ '::Menu:Pantry' | abpLocalization }}</h3>
+  </div>
+
+  <div class="card-body">
+    <!-- 1. ESTADO DE CARGA -->
+    <div *ngIf="isLoading" class="text-center my-4">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2">{{ '::Loading' | abpLocalization }}...</p>
+    </div>
+
+    <!-- 2. ESTADO DE ERROR -->
+    <div *ngIf="hasError && !isLoading" class="alert alert-danger text-center">
+      <p>Ocurrió un error al cargar la despensa.</p>
+      <button class="btn btn-outline-danger" (click)="loadItems()">Reintentar</button>
+    </div>
+
+    <!-- 3. ESTADO DE LISTA VACÍA -->
+    <div *ngIf="!isLoading && !hasError && items.length === 0" class="text-center my-4">
+      <p class="text-muted">No tienes ningún ítem registrado en tu despensa.</p>
+    </div>
+
+    <!-- 4. ESTADO DE RESULTADOS (RF-09 aplicado a datos faltantes) -->
+    <div *ngIf="!isLoading && !hasError && items.length > 0" class="table-responsive">
+      <table class="table table-striped table-hover">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Cantidad</th>
+            <th>Fecha Vencimiento</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of items">
+            <td>{{ item.nombreProducto }}</td>
+            <td>
+              <span *ngIf="item.cantidad != null">{{ item.cantidad }} {{ item.unidad }}</span>
+              <span *ngIf="item.cantidad == null" class="text-muted">Sin especificar</span>
+            </td>
+            <td>
+              <span *ngIf="item.fechaVencimiento">{{ item.fechaVencimiento | date:'shortDate' }}</span>
+              <span *ngIf="!item.fechaVencimiento" class="text-muted">Sin fecha</span>
+            </td>
+            <td>
+              <button class="btn btn-sm btn-primary me-1" (click)="openEditModal(item)">Editar</button>
+              <button class="btn btn-sm btn-success me-1" (click)="marcarConsumido(item.id)">Consumir</button>
+              <button class="btn btn-sm btn-danger" (click)="deleteItem(item.id)">Eliminar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Formulario Reactivo de Edición -->
+<div class="modal d-block" tabindex="-1" *ngIf="isModalOpen" style="background: rgba(0,0,0,0.5)">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Ítem de Despensa</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Cantidad</label>
+            <input type="number" class="form-control" formControlName="cantidad" />
+            <div *ngIf="form.get('cantidad')?.invalid && form.get('cantidad')?.touched" class="text-danger small">
+              La cantidad no puede ser negativa.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Unidad</label>
+            <input type="text" class="form-control" formControlName="unidad" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha de Vencimiento</label>
+            <input type="date" class="form-control" formControlName="fechaVencimiento" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="form.invalid">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
