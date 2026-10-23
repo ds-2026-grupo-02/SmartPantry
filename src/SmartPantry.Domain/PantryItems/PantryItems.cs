@@ -1,4 +1,5 @@
 ﻿using System;
+using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 
 namespace SmartPantry.PantryItems;
@@ -35,6 +36,18 @@ public class PantryItem : FullAuditedAggregateRoot<Guid>
     public void UpdateExpirationDate(DateTime? newExpirationDate)
     {
         FechaVencimiento = newExpirationDate;
+    }
+
+    public void SetCantidadYUnidad(decimal cantidad, string unidad)
+    {
+        if (cantidad < 0)
+        {
+            throw new BusinessException("SmartPantry:CantidadInvalida")
+                .WithData("Cantidad", cantidad);
+        }
+
+        Cantidad = cantidad;
+        Unidad = unidad?.Trim();
     }
     public void MarcarComoConsumido()
     {
