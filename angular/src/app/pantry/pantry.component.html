@@ -78,16 +78,25 @@
             <label class="form-label">Cantidad</label>
             <input type="number" class="form-control" formControlName="cantidad" />
             <div *ngIf="form.get('cantidad')?.invalid && form.get('cantidad')?.touched" class="text-danger small">
-              La cantidad no puede ser negativa.
+              <div *ngIf="form.get('cantidad')?.hasError('required')">La cantidad es obligatoria.</div>
+              <div *ngIf="form.get('cantidad')?.hasError('min')">La cantidad no puede ser negativa.</div>
+              <div *ngIf="form.get('cantidad')?.hasError('pattern')">Por favor, ingresa un número válido (no se permiten letras).</div>
             </div>
+          </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Unidad</label>
             <input type="text" class="form-control" formControlName="unidad" />
+            <div *ngIf="form.get('unidad')?.invalid && form.get('unidad')?.touched" class="text-danger small">
+              <div *ngIf="form.get('unidad')?.hasError('required')">La unidad es obligatoria.</div>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Fecha de Vencimiento</label>
             <input type="date" class="form-control" formControlName="fechaVencimiento" />
+            <div *ngIf="form.get('fechaVencimiento')?.invalid && form.get('fechaVencimiento')?.touched" class="text-danger small">
+              <div *ngIf="form.get('fechaVencimiento')?.hasError('required')">La fecha de vencimiento es obligatoria.</div>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
