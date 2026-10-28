@@ -91,12 +91,19 @@ export class PantryComponent implements OnInit {
 
   openEditModal(item: DespensaDto) {
     this.editingId = item.id ?? null;
+    // Manejo seguro de la fecha por si viene como string o como objeto Date
+    let fechaFormateada = null;
+    if (item.fechaVencimiento) {
+      const fechaStr = typeof item.fechaVencimiento === 'string'
+        ? item.fechaVencimiento
+        : new Date(item.fechaVencimiento).toISOString();
+      fechaFormateada = fechaStr.split('T')[0];
+    }
+
     this.form.patchValue({
       cantidad: typeof item.cantidad === 'number' ? item.cantidad : 0,
       unidad: item.unidad ?? '',
-      fechaVencimiento: item.fechaVencimiento
-        ? item.fechaVencimiento.split('T')[0]
-        : null,
+      fechaVencimiento: fechaFormateada,
     });
     this.isModalOpen = true;
   }
