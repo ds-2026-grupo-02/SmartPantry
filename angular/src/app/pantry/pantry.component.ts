@@ -41,9 +41,9 @@ export class PantryComponent implements OnInit {
 
   buildForm() {
     this.form = this.fb.group({
-      cantidad: [0, [Validators.min(0)]],
-      unidad: [''],
-      fechaVencimiento: [null],
+      cantidad: [0, [Validators.required, Validators.min(0), Validators.pattern(/^[0-9]+$/)]],
+      unidad: ['', [Validators.required]],
+      fechaVencimiento: [null, [Validators.required]],
     });
   }
 
