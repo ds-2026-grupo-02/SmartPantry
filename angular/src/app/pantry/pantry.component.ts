@@ -1,7 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ListService, LocalizationModule } from '@abp/ng.core';
+import { ConfirmationService, Confirmation, ToasterService } from '@abp/ng.theme.shared';
 import { DespensaService } from '../proxy/pantry-items/despensa.service';
 import { DespensaDto } from '../proxy/pantry-items/models';
 
@@ -57,6 +58,7 @@ export class PantryComponent implements OnInit {
 
   // Modal de Edición
   isModalOpen = false;
+  isSaving = false;
   editingId: string | null = null;
   form!: FormGroup;
   cantidadInputInvalid = false;
@@ -65,6 +67,8 @@ export class PantryComponent implements OnInit {
   constructor(
     public readonly list: ListService,
     private despensaService: DespensaService,
+    private confirmation: ConfirmationService,
+    private toaster: ToasterService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef
   ) {
@@ -113,7 +117,8 @@ export class PantryComponent implements OnInit {
       }
     });
 
-    const streamCreator = (query: any) => this.despensaService.getList(query);
+    const streamCreator = (query: any) =>
+      this.despensaService.getList(query, { skipHandleError: true });
 
     this.list.hookToQuery(streamCreator).subscribe({
       next: (response) => {
@@ -158,6 +163,7 @@ export class PantryComponent implements OnInit {
   closeModal() {
     this.isModalOpen = false;
     this.editingId = null;
+    this.isSaving = false;
     this.cantidadInputInvalid = false;
     this.fechaInputInvalid = false;
     this.form.reset();
@@ -166,23 +172,52 @@ export class PantryComponent implements OnInit {
   save() {
     if (this.form.invalid || !this.editingId || this.cantidadInputInvalid || this.fechaInputInvalid) return;
 
-    this.despensaService.update(this.editingId, this.form.value).subscribe(() => {
-      this.closeModal();
-      this.list.get();
+    this.isSaving = true;
+    const formValue = {
+      ...this.form.value,
+      cantidad: Number(this.form.value.cantidad),
+      unidad: this.form.value.unidad?.trim() || null,
+    };
+
+    this.despensaService.update(this.editingId, formValue, { skipHandleError: true }).subscribe({
+      next: () => {
+        this.isSaving = false;
+        this.closeModal();
+        this.list.get();
+      },
+      error: () => {
+        this.isSaving = false;
+        this.toaster.error('No se pudo guardar los cambios. Verifique la conexión con el servidor.', 'Error de conexión');
+        this.cdr.detectChanges();
+      },
     });
   }
 
   marcarConsumido(id: string) {
-    this.despensaService.marcarConsumido(id).subscribe(() => {
-      this.list.get();
+    this.despensaService.marcarConsumido(id, { skipHandleError: true }).subscribe({
+      next: () => {
+        this.list.get();
+      },
+      error: () => {
+        this.toaster.error('No se pudo marcar el ítem como consumido. Verifique la conexión con el servidor.', 'Error de conexión');
+      },
     });
   }
 
   deleteItem(id: string) {
-    if (confirm('¿Está seguro de eliminar este ítem de la despensa?')) {
-      this.despensaService.delete(id).subscribe(() => {
-        this.list.get();
+    this.confirmation
+      .warn('', '¿Eliminar elemento de la despensa?')
+      .subscribe((status: Confirmation.Status) => {
+        if (status === Confirmation.Status.confirm) {
+          this.despensaService.delete(id, { skipHandleError: true }).subscribe({
+            next: () => {
+              this.list.get();
+            },
+            error: () => {
+              this.toaster.error('No se pudo eliminar el ítem. Verifique la conexión con el servidor.', 'Error de conexión');
+            },
+          });
+        }
       });
-    }
   }
 }

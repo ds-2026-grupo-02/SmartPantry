@@ -10,10 +10,13 @@
       <p class="mt-2">{{ '::Loading' | abpLocalization }}...</p>
     </div>
 
-    <!-- 2. ESTADO DE ERROR -->
-    <div *ngIf="hasError && !isLoading" class="alert alert-danger text-center">
-      <p>Ocurrió un error al cargar la despensa.</p>
-      <button class="btn btn-outline-danger" (click)="loadItems()">Reintentar</button>
+    <!-- 2. ESTADO DE ERROR (BackEnd detenido o falla de conexion) -->
+    <div *ngIf="hasError && !isLoading" class="alert alert-danger text-center my-4">
+      <h5 class="alert-heading mb-2"><i class="fas fa-exclamation-triangle me-2"></i>El servicio de despensa no está disponible</h5>
+      <p class="mb-3">No se pudo conectar con el servidor. Compruebe que el BackEnd esté en ejecución.</p>
+      <button class="btn btn-outline-danger" (click)="loadItems()">
+        <i class="fas fa-sync-alt me-1"></i> Reintentar
+      </button>
     </div>
 
     <!-- 3. ESTADO DE LISTA VACÍA -->
@@ -92,7 +95,7 @@
               <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('required')">La cantidad es obligatoria.</div>
               <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('min')">La cantidad no puede ser negativa.</div>
               <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('pattern')">La cantidad debe ser un número entero.</div>
-          </div>
+            </div>
           </div>
           <div class="mb-3">
             <label class="form-label">Unidad (opcional)</label>
