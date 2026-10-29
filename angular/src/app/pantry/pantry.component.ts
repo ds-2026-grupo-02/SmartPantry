@@ -5,6 +5,40 @@ import { ListService, LocalizationModule } from '@abp/ng.core';
 import { DespensaService } from '../proxy/pantry-items/despensa.service';
 import { DespensaDto } from '../proxy/pantry-items/models';
 
+export function fechaValidaValidator(control: AbstractControl): ValidationErrors | null {
+  const value = control.value;
+  if (!value) return null; // Si es opcional y está vacío, es válido
+
+  if (typeof value === 'string') {
+    // Formato esperado de input date: YYYY-MM-DD
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(value)) {
+      return { fechaInvalida: true };
+    }
+
+    const [anioStr, mesStr, diaStr] = value.split('-');
+    const anio = parseInt(anioStr, 10);
+    const mes = parseInt(mesStr, 10);
+    const dia = parseInt(diaStr, 10);
+
+    const fecha = new Date(anio, mes - 1, dia);
+
+    // Verificar que coincida día, mes y año exactos (ej. 30 de febrero Date lo convierte a marzo)
+    if (
+      fecha.getFullYear() !== anio ||
+      fecha.getMonth() !== mes - 1 ||
+      fecha.getDate() !== dia
+    ) {
+      return { fechaInvalida: true };
+    }
+  } else if (value instanceof Date) {
+    if (isNaN(value.getTime())) {
+      return { fechaInvalida: true };
+    }
+  }
+
+  return null;
+}
 
 @Component({
   selector: 'app-pantry',
@@ -25,6 +59,8 @@ export class PantryComponent implements OnInit {
   isModalOpen = false;
   editingId: string | null = null;
   form!: FormGroup;
+  cantidadInputInvalid = false;
+  fechaInputInvalid = false;
 
   constructor(
     public readonly list: ListService,
@@ -41,10 +77,20 @@ export class PantryComponent implements OnInit {
 
   buildForm() {
     this.form = this.fb.group({
-      cantidad: [0, [Validators.required, Validators.min(0), Validators.pattern(/^[0-9]+$/)]],
-      unidad: ['', [Validators.required]],
-      fechaVencimiento: [null, [Validators.required]],
+      cantidad: [1, [Validators.required, Validators.min(0), Validators.pattern(/^[0-9]+$/)]],
+      unidad: ['', [Validators.maxLength(32)]],
+      fechaVencimiento: [null, [fechaValidaValidator]],
     });
+  }
+
+  onCantidadInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.cantidadInputInvalid = input.validity.badInput;
+  }
+
+  onFechaInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.fechaInputInvalid = input.validity.badInput;
   }
 
   hookList() {
@@ -91,7 +137,8 @@ export class PantryComponent implements OnInit {
 
   openEditModal(item: DespensaDto) {
     this.editingId = item.id ?? null;
-    // Manejo seguro de la fecha por si viene como string o como objeto Date
+    this.cantidadInputInvalid = false;
+    this.fechaInputInvalid = false;
     let fechaFormateada = null;
     if (item.fechaVencimiento) {
       const fechaStr = typeof item.fechaVencimiento === 'string'
@@ -101,7 +148,7 @@ export class PantryComponent implements OnInit {
     }
 
     this.form.patchValue({
-      cantidad: typeof item.cantidad === 'number' ? item.cantidad : 0,
+      cantidad: typeof item.cantidad === 'number' ? Math.floor(item.cantidad) : 0,
       unidad: item.unidad ?? '',
       fechaVencimiento: fechaFormateada,
     });
@@ -111,11 +158,13 @@ export class PantryComponent implements OnInit {
   closeModal() {
     this.isModalOpen = false;
     this.editingId = null;
+    this.cantidadInputInvalid = false;
+    this.fechaInputInvalid = false;
     this.form.reset();
   }
 
   save() {
-    if (this.form.invalid || !this.editingId) return;
+    if (this.form.invalid || !this.editingId || this.cantidadInputInvalid || this.fechaInputInvalid) return;
 
     this.despensaService.update(this.editingId, this.form.value).subscribe(() => {
       this.closeModal();

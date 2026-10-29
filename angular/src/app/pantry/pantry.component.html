@@ -36,7 +36,10 @@
           <tr *ngFor="let item of items">
             <td>{{ item.nombreProducto }}</td>
             <td>
-              <span *ngIf="item.cantidad != null">{{ item.cantidad }} {{ item.unidad }}</span>
+              <ng-container *ngIf="item.cantidad != null">
+                <span>{{ item.cantidad }}</span>
+                <span *ngIf="item.unidad" class="ms-1">{{ item.unidad }}</span>
+              </ng-container>
               <span *ngIf="item.cantidad == null" class="text-muted">Sin especificar</span>
             </td>
             <td>
@@ -76,32 +79,55 @@
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Cantidad</label>
-            <input type="number" class="form-control" formControlName="cantidad" />
-            <div *ngIf="form.get('cantidad')?.invalid && form.get('cantidad')?.touched" class="text-danger small">
-              <div *ngIf="form.get('cantidad')?.hasError('required')">La cantidad es obligatoria.</div>
-              <div *ngIf="form.get('cantidad')?.hasError('min')">La cantidad no puede ser negativa.</div>
-              <div *ngIf="form.get('cantidad')?.hasError('pattern')">Por favor, ingresa un número válido (no se permiten letras).</div>
-            </div>
+            <input
+              type="number"
+              step="1"
+              min="0"
+              class="form-control"
+              formControlName="cantidad"
+              (input)="onCantidadInput($event)"
+            />
+            <div *ngIf="(form.get('cantidad')?.invalid || cantidadInputInvalid) && form.get('cantidad')?.touched" class="text-danger small mt-1">
+              <div *ngIf="cantidadInputInvalid">La cantidad debe ser un número entero válido (no se permiten letras ni caracteres especiales).</div>
+              <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('required')">La cantidad es obligatoria.</div>
+              <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('min')">La cantidad no puede ser negativa.</div>
+              <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('pattern')">La cantidad debe ser un número entero.</div>
           </div>
           </div>
           <div class="mb-3">
-            <label class="form-label">Unidad</label>
-            <input type="text" class="form-control" formControlName="unidad" />
-            <div *ngIf="form.get('unidad')?.invalid && form.get('unidad')?.touched" class="text-danger small">
-              <div *ngIf="form.get('unidad')?.hasError('required')">La unidad es obligatoria.</div>
+            <label class="form-label">Unidad (opcional)</label>
+            <input
+              type="text"
+              class="form-control"
+              formControlName="unidad"
+              placeholder="paquetes, botellas, latas..."
+              maxlength="32"
+            />
+            <div *ngIf="form.get('unidad')?.invalid && form.get('unidad')?.touched" class="text-danger small mt-1">
+              <div *ngIf="form.get('unidad')?.hasError('maxlength')">La unidad no puede superar los 32 caracteres.</div>
             </div>
           </div>
           <div class="mb-3">
-            <label class="form-label">Fecha de Vencimiento</label>
-            <input type="date" class="form-control" formControlName="fechaVencimiento" />
-            <div *ngIf="form.get('fechaVencimiento')?.invalid && form.get('fechaVencimiento')?.touched" class="text-danger small">
-              <div *ngIf="form.get('fechaVencimiento')?.hasError('required')">La fecha de vencimiento es obligatoria.</div>
+            <label class="form-label">Fecha de Vencimiento (opcional)</label>
+            <input
+              type="date"
+              class="form-control"
+              formControlName="fechaVencimiento"
+              (input)="onFechaInput($event)"
+            />
+            <div *ngIf="(form.get('fechaVencimiento')?.invalid || fechaInputInvalid) && form.get('fechaVencimiento')?.touched" class="text-danger small mt-1">
+              <div *ngIf="fechaInputInvalid || form.get('fechaVencimiento')?.hasError('fechaInvalida')">
+                Por favor, ingrese una fecha válida existente en el calendario.
+              </div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" [disabled]="form.invalid">Guardar</button>
+          <button type="button" class="btn btn-secondary" (click)="closeModal()" [disabled]="isSaving">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="form.invalid || cantidadInputInvalid || fechaInputInvalid || isSaving">
+            <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-1" role="status"></span>
+            Guardar
+          </button>
         </div>
       </form>
     </div>
