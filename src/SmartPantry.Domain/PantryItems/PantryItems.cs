@@ -45,8 +45,14 @@ public class PantryItem : FullAuditedAggregateRoot<Guid>
                 .WithData("Cantidad", cantidad);
         }
 
+        var trimmedUnidad = string.IsNullOrWhiteSpace(unidad) ? null : unidad.Trim();
+        if (trimmedUnidad != null && trimmedUnidad.Length > PantryItemConsts.MaxUnidadLength)
+        {
+            throw new ArgumentException($"La unidad no puede superar los {PantryItemConsts.MaxUnidadLength} caracteres.");
+        }
+
         Cantidad = cantidad;
-        Unidad = string.IsNullOrWhiteSpace(unidad) ? null : unidad.Trim();
+        Unidad = trimmedUnidad;
     }
 
     public void MarcarComoConsumido()
