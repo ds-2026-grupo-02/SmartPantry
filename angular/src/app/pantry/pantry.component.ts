@@ -81,7 +81,7 @@ export class PantryComponent implements OnInit {
 
   buildForm() {
     this.form = this.fb.group({
-      cantidad: [1, [Validators.required, Validators.min(0), Validators.pattern(/^[0-9]+$/)]],
+      cantidad: [null, [Validators.min(0), Validators.pattern(/^[0-9]+$/)]],
       unidad: ['', [Validators.maxLength(32)]],
       fechaVencimiento: [null, [fechaValidaValidator]],
     });
@@ -153,7 +153,7 @@ export class PantryComponent implements OnInit {
     }
 
     this.form.patchValue({
-      cantidad: typeof item.cantidad === 'number' ? Math.floor(item.cantidad) : 0,
+      cantidad: typeof item.cantidad === 'number' ? Math.floor(item.cantidad) : null,
       unidad: item.unidad ?? '',
       fechaVencimiento: fechaFormateada,
     });
@@ -173,9 +173,10 @@ export class PantryComponent implements OnInit {
     if (this.form.invalid || !this.editingId || this.cantidadInputInvalid || this.fechaInputInvalid) return;
 
     this.isSaving = true;
+    const rawCantidad = this.form.value.cantidad;
     const formValue = {
       ...this.form.value,
-      cantidad: Number(this.form.value.cantidad),
+      cantidad: rawCantidad !== null && rawCantidad !== '' ? Number(rawCantidad) : null,
       unidad: this.form.value.unidad?.trim() || null,
     };
 

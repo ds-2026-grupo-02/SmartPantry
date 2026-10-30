@@ -67,7 +67,7 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
             currentUserId,
             input.ProductoId,
             input.Cantidad,
-            input.Unidad ?? string.Empty,
+            input.Unidad,
             input.FechaVencimiento
         );
 

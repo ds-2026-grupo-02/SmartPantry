@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 
@@ -8,8 +8,8 @@ public class PantryItem : FullAuditedAggregateRoot<Guid>
 {
     public Guid UserId { get; private set; }
     public Guid ProductoId { get; private set; }
-    public decimal Cantidad { get; private set; }
-    public string Unidad { get; private set; }
+    public decimal? Cantidad { get; private set; }
+    public string? Unidad { get; private set; }
     public DateTime? FechaVencimiento { get; private set; }
     public bool EsConsumido { get; private set; }
 
@@ -19,15 +19,14 @@ public class PantryItem : FullAuditedAggregateRoot<Guid>
         Guid id,
         Guid userId,
         Guid productoId,
-        decimal cantidad,
-        string unidad,
+        decimal? cantidad,
+        string? unidad,
         DateTime? fechaVencimiento)
         : base(id)
     {
         UserId = userId;
         ProductoId = productoId;
-        Cantidad = cantidad;
-        Unidad = unidad;
+        SetCantidadYUnidad(cantidad, unidad);
         FechaVencimiento = fechaVencimiento;
         EsConsumido = false;
     }
@@ -38,17 +37,18 @@ public class PantryItem : FullAuditedAggregateRoot<Guid>
         FechaVencimiento = newExpirationDate;
     }
 
-    public void SetCantidadYUnidad(decimal cantidad, string unidad)
+    public void SetCantidadYUnidad(decimal? cantidad, string? unidad)
     {
-        if (cantidad < 0)
+        if (cantidad.HasValue && cantidad.Value < 0)
         {
             throw new BusinessException("SmartPantry:CantidadInvalida")
                 .WithData("Cantidad", cantidad);
         }
 
         Cantidad = cantidad;
-        Unidad = unidad?.Trim();
+        Unidad = string.IsNullOrWhiteSpace(unidad) ? null : unidad.Trim();
     }
+
     public void MarcarComoConsumido()
     {
         EsConsumido = true;

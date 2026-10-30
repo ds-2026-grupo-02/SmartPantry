@@ -31,6 +31,7 @@
           <tr>
             <th>Producto</th>
             <th>Cantidad</th>
+            <th>Unidad</th>
             <th>Fecha Vencimiento</th>
             <th>Acciones</th>
           </tr>
@@ -39,11 +40,12 @@
           <tr *ngFor="let item of items">
             <td>{{ item.nombreProducto }}</td>
             <td>
-              <ng-container *ngIf="item.cantidad != null">
-                <span>{{ item.cantidad }}</span>
-                <span *ngIf="item.unidad" class="ms-1">{{ item.unidad }}</span>
-              </ng-container>
-              <span *ngIf="item.cantidad == null" class="text-muted">Sin especificar</span>
+              <span *ngIf="item.cantidad != null">{{ item.cantidad }}</span>
+              <span *ngIf="item.cantidad == null" class="text-muted">Sin cantidad</span>
+            </td>
+            <td>
+              <span *ngIf="item.unidad">{{ item.unidad }}</span>
+              <span *ngIf="!item.unidad" class="text-muted">Sin unidad</span>
             </td>
             <td>
               <span *ngIf="item.fechaVencimiento">{{ item.fechaVencimiento | date:'shortDate' }}</span>
@@ -81,7 +83,7 @@
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label">Cantidad</label>
+            <label class="form-label">Cantidad (opcional)</label>
             <input
               type="number"
               step="1"
@@ -92,7 +94,6 @@
             />
             <div *ngIf="(form.get('cantidad')?.invalid || cantidadInputInvalid) && form.get('cantidad')?.touched" class="text-danger small mt-1">
               <div *ngIf="cantidadInputInvalid">La cantidad debe ser un número entero válido (no se permiten letras ni caracteres especiales).</div>
-              <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('required')">La cantidad es obligatoria.</div>
               <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('min')">La cantidad no puede ser negativa.</div>
               <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('pattern')">La cantidad debe ser un número entero.</div>
             </div>

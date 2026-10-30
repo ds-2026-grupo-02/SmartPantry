@@ -29,7 +29,7 @@ namespace SmartPantry.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal>("Cantidad")
+                    b.Property<decimal?>("Cantidad")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -84,7 +84,6 @@ namespace SmartPantry.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Unidad")
-                        .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 

@@ -89,7 +89,6 @@ public class SmartPantryDbContext :
             b.ConfigureByConvention();
 
             b.Property(x => x.Unidad)
-             .IsRequired()
              .HasMaxLength(32);
         });
 
