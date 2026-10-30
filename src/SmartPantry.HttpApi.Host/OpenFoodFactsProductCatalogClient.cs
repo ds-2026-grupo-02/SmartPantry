@@ -1,13 +1,10 @@
-﻿using SmartPantry.Productos;
 using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Volo.Abp;
-using Volo.Abp.DependencyInjection;
 
 namespace SmartPantry.Productos;
 
@@ -29,7 +26,7 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
         }
 
         // Endpoint v3 de Open Food Facts para buscar por código de barras
-        const string fields = "code,product_name,product_name_es,brands,image_front_url";
+        const string fields = "code,product_name,product_name_en,product_name_es,quantity,brands,image_front_url";
         var requestUri = $"product/{Uri.EscapeDataString(barcode)}?fields={Uri.EscapeDataString(fields)}";
 
         try
@@ -60,11 +57,16 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
                 return null;
             }
 
+            var nombreEn = !string.IsNullOrWhiteSpace(offResponse.Product.ProductNameEn)
+                ? offResponse.Product.ProductNameEn.Trim()
+                : (string.IsNullOrWhiteSpace(offResponse.Product.ProductName) ? null : offResponse.Product.ProductName.Trim());
+
             // Mapeamos de la respuesta cruda al ExternalProductDto propio (RF-09: traduciendo sin inventar)
             return new ExternalProductDto
             {
-                Nombre = string.IsNullOrWhiteSpace(offResponse.Product.ProductName) ? null : offResponse.Product.ProductName.Trim(),
+                Nombre = nombreEn,
                 NombreEs = string.IsNullOrWhiteSpace(offResponse.Product.ProductNameEs) ? null : offResponse.Product.ProductNameEs.Trim(),
+                Cantidad = string.IsNullOrWhiteSpace(offResponse.Product.Quantity) ? null : offResponse.Product.Quantity.Trim(),
                 Marca = string.IsNullOrWhiteSpace(offResponse.Product.Brands) ? null : offResponse.Product.Brands.Trim(),
                 ImagenUrl = string.IsNullOrWhiteSpace(offResponse.Product.ImageFrontUrl) ? null : offResponse.Product.ImageFrontUrl.Trim()
             };
@@ -94,8 +96,14 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
         [JsonPropertyName("product_name")]
         public string? ProductName { get; set; }
 
+        [JsonPropertyName("product_name_en")]
+        public string? ProductNameEn { get; set; }
+
         [JsonPropertyName("product_name_es")]
         public string? ProductNameEs { get; set; }
+
+        [JsonPropertyName("quantity")]
+        public string? Quantity { get; set; }
 
         [JsonPropertyName("brands")]
         public string? Brands { get; set; }

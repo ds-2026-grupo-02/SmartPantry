@@ -4,5 +4,5 @@ public static class ProductoConsts
 {
     public const int MaxNombreLength = 128;
     public const int MaxCodigoBarrasLength = 64;
-    
+    public const int MaxCantidadLength = 64;
 }

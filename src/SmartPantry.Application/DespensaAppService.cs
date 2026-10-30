@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using SmartPantry.Productos;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
@@ -42,13 +40,15 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
 
         var dtos = items.Select(x => ObjectMapper.Map<PantryItem, DespensaDto>(x)).ToList();
 
-        // Completar el nombre del producto si aplica
+        // Completar los datos del producto asociado
         foreach (var dto in dtos)
         {
             var producto = await _productoRepository.FindAsync(dto.ProductoId);
             if (producto != null)
             {
-                dto.NombreProducto = producto.Nombre;
+                dto.NombreProductoEs = producto.NombreEs;
+                dto.NombreProductoEn = producto.NombreEn;
+                dto.CantidadProducto = producto.Cantidad;
             }
         }
 
@@ -66,15 +66,15 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
             GuidGenerator.Create(),
             currentUserId,
             input.ProductoId,
-            input.Cantidad,
-            input.Unidad,
             input.FechaVencimiento
         );
 
         await _pantryItemRepository.InsertAsync(item);
 
         var dto = ObjectMapper.Map<PantryItem, DespensaDto>(item);
-        dto.NombreProducto = producto.Nombre;
+        dto.NombreProductoEs = producto.NombreEs;
+        dto.NombreProductoEn = producto.NombreEn;
+        dto.CantidadProducto = producto.Cantidad;
         return dto;
     }
 
@@ -82,11 +82,19 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
     {
         var item = await GetItemDelUsuarioOThrowAsync(id);
 
-        item.SetCantidadYUnidad(input.Cantidad, input.Unidad);
         item.UpdateExpirationDate(input.FechaVencimiento);
 
         await _pantryItemRepository.UpdateAsync(item);
-        return ObjectMapper.Map<PantryItem, DespensaDto>(item);
+
+        var dto = ObjectMapper.Map<PantryItem, DespensaDto>(item);
+        var producto = await _productoRepository.FindAsync(dto.ProductoId);
+        if (producto != null)
+        {
+            dto.NombreProductoEs = producto.NombreEs;
+            dto.NombreProductoEn = producto.NombreEn;
+            dto.CantidadProducto = producto.Cantidad;
+        }
+        return dto;
     }
 
     public async Task MarcarConsumidoAsync(Guid id)

@@ -44,8 +44,8 @@ public class SmartPantryDbContext :
 
     /* Entidades Propias del Dominio */
     public DbSet<Producto> Productos { get; set; }
-    public DbSet<PantryItem> PantryItems { get; set; } // Agregado si ya tienes la entidad de ítems de despensa
-    public DbSet<ExpirationWarning> ExpirationWarnings { get; set; } // Propiedad DbSet requerida por EF Core
+    public DbSet<PantryItem> PantryItems { get; set; }
+    public DbSet<ExpirationWarning> ExpirationWarnings { get; set; }
 
     public SmartPantryDbContext(DbContextOptions<SmartPantryDbContext> options)
         : base(options)
@@ -74,9 +74,14 @@ public class SmartPantryDbContext :
             b.ToTable("Productos");
             b.ConfigureByConvention();
 
-            b.Property(x => x.Nombre)
-             .IsRequired()
+            b.Property(x => x.NombreEs)
              .HasMaxLength(ProductoConsts.MaxNombreLength);
+
+            b.Property(x => x.NombreEn)
+             .HasMaxLength(ProductoConsts.MaxNombreLength);
+
+            b.Property(x => x.Cantidad)
+             .HasMaxLength(ProductoConsts.MaxCantidadLength);
 
             b.Property(x => x.CodigoBarras)
              .IsRequired()
@@ -87,9 +92,6 @@ public class SmartPantryDbContext :
         {
             b.ToTable("AppPantryItems");
             b.ConfigureByConvention();
-
-            b.Property(x => x.Unidad)
-             .HasMaxLength(PantryItemConsts.MaxUnidadLength);
         });
 
         builder.Entity<ExpirationWarning>(b =>
