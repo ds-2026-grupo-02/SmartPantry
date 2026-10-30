@@ -12,16 +12,18 @@
 
     <!-- 2. ESTADO DE ERROR (BackEnd detenido o falla de conexion) -->
     <div *ngIf="hasError && !isLoading" class="alert alert-danger text-center my-4">
-      <h5 class="alert-heading mb-2"><i class="fas fa-exclamation-triangle me-2"></i>El servicio de despensa no está disponible</h5>
-      <p class="mb-3">No se pudo conectar con el servidor. Compruebe que el BackEnd esté en ejecución.</p>
+      <h5 class="alert-heading mb-2">
+        <i class="fas fa-exclamation-triangle me-2"></i>{{ '::Pantry:ServiceUnavailable' | abpLocalization }}
+      </h5>
+      <p class="mb-3">{{ '::Pantry:ServiceUnavailableMessage' | abpLocalization }}</p>
       <button class="btn btn-outline-danger" (click)="loadItems()">
-        <i class="fas fa-sync-alt me-1"></i> Reintentar
+        <i class="fas fa-sync-alt me-1"></i> {{ '::Pantry:Retry' | abpLocalization }}
       </button>
     </div>
 
     <!-- 3. ESTADO DE LISTA VACÍA -->
     <div *ngIf="!isLoading && !hasError && items.length === 0" class="text-center my-4">
-      <p class="text-muted">No tienes ningún ítem registrado en tu despensa.</p>
+      <p class="text-muted">{{ '::Pantry:Empty' | abpLocalization }}</p>
     </div>
 
     <!-- 4. ESTADO DE RESULTADOS (RF-09 aplicado a datos faltantes) -->
@@ -29,11 +31,11 @@
       <table class="table table-striped table-hover">
         <thead>
           <tr>
-            <th>Producto</th>
-            <th>Cantidad</th>
-            <th>Unidad</th>
-            <th>Fecha Vencimiento</th>
-            <th>Acciones</th>
+            <th>{{ '::Pantry:Product' | abpLocalization }}</th>
+            <th>{{ '::Pantry:Quantity' | abpLocalization }}</th>
+            <th>{{ '::Pantry:Unit' | abpLocalization }}</th>
+            <th>{{ '::Pantry:ExpirationDate' | abpLocalization }}</th>
+            <th>{{ '::Pantry:Actions' | abpLocalization }}</th>
           </tr>
         </thead>
         <tbody>
@@ -41,28 +43,30 @@
             <td>{{ item.nombreProducto }}</td>
             <td>
               <span *ngIf="item.cantidad != null">{{ item.cantidad }}</span>
-              <span *ngIf="item.cantidad == null" class="text-muted">Sin cantidad</span>
+              <span *ngIf="item.cantidad == null" class="text-muted">{{ '::Pantry:WithoutQuantity' | abpLocalization }}</span>
             </td>
             <td>
               <span *ngIf="item.unidad">{{ item.unidad }}</span>
-              <span *ngIf="!item.unidad" class="text-muted">Sin unidad</span>
+              <span *ngIf="!item.unidad" class="text-muted">{{ '::Pantry:WithoutUnit' | abpLocalization }}</span>
             </td>
             <td>
               <span *ngIf="item.fechaVencimiento">{{ item.fechaVencimiento | date:'shortDate' }}</span>
-              <span *ngIf="!item.fechaVencimiento" class="text-muted">Sin fecha</span>
+              <span *ngIf="!item.fechaVencimiento" class="text-muted">{{ '::Pantry:WithoutDate' | abpLocalization }}</span>
             </td>
             <td>
-              <button class="btn btn-sm btn-primary me-1" (click)="openEditModal(item)">Editar</button>
+              <button class="btn btn-sm btn-primary me-1" (click)="openEditModal(item)">
+                {{ '::Pantry:Edit' | abpLocalization }}
+              </button>
               <button class="btn btn-sm btn-success me-1"
                       *ngIf="item.id"
                       (click)="marcarConsumido(item.id)">
-                Consumir
+                {{ '::Pantry:Consume' | abpLocalization }}
               </button>
 
               <button class="btn btn-sm btn-danger"
                       *ngIf="item.id"
                       (click)="deleteItem(item.id)">
-                Eliminar
+                {{ '::Pantry:Delete' | abpLocalization }}
               </button>
             </td>
           </tr>
@@ -77,13 +81,13 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Editar Ítem de Despensa</h5>
+        <h5 class="modal-title">{{ '::Pantry:EditModalTitle' | abpLocalization }}</h5>
         <button type="button" class="btn-close" (click)="closeModal()"></button>
       </div>
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label">Cantidad (opcional)</label>
+            <label class="form-label">{{ '::Pantry:QuantityOptional' | abpLocalization }}</label>
             <input
               type="number"
               step="1"
@@ -93,26 +97,26 @@
               (input)="onCantidadInput($event)"
             />
             <div *ngIf="(form.get('cantidad')?.invalid || cantidadInputInvalid) && form.get('cantidad')?.touched" class="text-danger small mt-1">
-              <div *ngIf="cantidadInputInvalid">La cantidad debe ser un número entero válido (no se permiten letras ni caracteres especiales).</div>
-              <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('min')">La cantidad no puede ser negativa.</div>
-              <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('pattern')">La cantidad debe ser un número entero.</div>
+              <div *ngIf="cantidadInputInvalid">{{ '::Pantry:Validation:CantidadEntera' | abpLocalization }}</div>
+              <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('min')">{{ '::Pantry:Validation:CantidadNegativa' | abpLocalization }}</div>
+              <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('pattern')">{{ '::Pantry:Validation:CantidadFormato' | abpLocalization }}</div>
             </div>
           </div>
           <div class="mb-3">
-            <label class="form-label">Unidad (opcional)</label>
+            <label class="form-label">{{ '::Pantry:UnitOptional' | abpLocalization }}</label>
             <input
               type="text"
               class="form-control"
               formControlName="unidad"
-              placeholder="paquetes, botellas, latas..."
+              [placeholder]="'::Pantry:UnitPlaceholder' | abpLocalization"
               maxlength="32"
             />
             <div *ngIf="form.get('unidad')?.invalid && form.get('unidad')?.touched" class="text-danger small mt-1">
-              <div *ngIf="form.get('unidad')?.hasError('maxlength')">La unidad no puede superar los 32 caracteres.</div>
+              <div *ngIf="form.get('unidad')?.hasError('maxlength')">{{ '::Pantry:Validation:UnidadLongitud' | abpLocalization }}</div>
             </div>
           </div>
           <div class="mb-3">
-            <label class="form-label">Fecha de Vencimiento (opcional)</label>
+            <label class="form-label">{{ '::Pantry:ExpirationDateOptional' | abpLocalization }}</label>
             <input
               type="date"
               class="form-control"
@@ -121,16 +125,18 @@
             />
             <div *ngIf="(form.get('fechaVencimiento')?.invalid || fechaInputInvalid) && form.get('fechaVencimiento')?.touched" class="text-danger small mt-1">
               <div *ngIf="fechaInputInvalid || form.get('fechaVencimiento')?.hasError('fechaInvalida')">
-                Por favor, ingrese una fecha válida existente en el calendario.
+                {{ '::Pantry:Validation:FechaInvalida' | abpLocalization }}
               </div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeModal()" [disabled]="isSaving">Cancelar</button>
+          <button type="button" class="btn btn-secondary" (click)="closeModal()" [disabled]="isSaving">
+            {{ '::Pantry:Cancel' | abpLocalization }}
+          </button>
           <button type="submit" class="btn btn-primary" [disabled]="form.invalid || cantidadInputInvalid || fechaInputInvalid || isSaving">
             <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-1" role="status"></span>
-            Guardar
+            {{ '::Pantry:Save' | abpLocalization }}
           </button>
         </div>
       </form>

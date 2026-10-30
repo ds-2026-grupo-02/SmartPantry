@@ -188,7 +188,7 @@ export class PantryComponent implements OnInit {
       },
       error: () => {
         this.isSaving = false;
-        this.toaster.error('No se pudo guardar los cambios. Verifique la conexión con el servidor.', 'Error de conexión');
+        this.toaster.error('::Pantry:Error:SaveFailed', '::Pantry:Error:ConnectionTitle');
         this.cdr.detectChanges();
       },
     });
@@ -200,14 +200,14 @@ export class PantryComponent implements OnInit {
         this.list.get();
       },
       error: () => {
-        this.toaster.error('No se pudo marcar el ítem como consumido. Verifique la conexión con el servidor.', 'Error de conexión');
+        this.toaster.error('::Pantry:Error:ConsumeFailed', '::Pantry:Error:ConnectionTitle');
       },
     });
   }
 
   deleteItem(id: string) {
     this.confirmation
-      .warn('', '¿Eliminar elemento de la despensa?')
+      .warn('', '::Pantry:DeleteConfirmation')
       .subscribe((status: Confirmation.Status) => {
         if (status === Confirmation.Status.confirm) {
           this.despensaService.delete(id, { skipHandleError: true }).subscribe({
@@ -215,7 +215,7 @@ export class PantryComponent implements OnInit {
               this.list.get();
             },
             error: () => {
-              this.toaster.error('No se pudo eliminar el ítem. Verifique la conexión con el servidor.', 'Error de conexión');
+              this.toaster.error('::Pantry:Error:DeleteFailed', '::Pantry:Error:ConnectionTitle');
             },
           });
         }
