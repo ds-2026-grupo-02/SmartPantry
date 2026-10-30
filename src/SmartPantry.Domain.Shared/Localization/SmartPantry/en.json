@@ -67,6 +67,7 @@
     "Pantry:Error:SaveFailed": "Could not save changes. Please check server connection.",
     "Pantry:Error:ConsumeFailed": "Could not mark item as consumed. Please check server connection.",
     "Pantry:Error:DeleteFailed": "Could not delete item. Please check server connection.",
-    "Pantry:Error:ConnectionTitle": "Connection Error"
+    "Pantry:Error:ConnectionTitle": "Connection Error",
+    "Pantry:ConsumeConfirmation": "Mark pantry item as consumed?"
   }
 }

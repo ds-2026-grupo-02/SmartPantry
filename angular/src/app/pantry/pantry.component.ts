@@ -195,14 +195,20 @@ export class PantryComponent implements OnInit {
   }
 
   marcarConsumido(id: string) {
-    this.despensaService.marcarConsumido(id, { skipHandleError: true }).subscribe({
-      next: () => {
-        this.list.get();
-      },
-      error: () => {
-        this.toaster.error('::Pantry:Error:ConsumeFailed', '::Pantry:Error:ConnectionTitle');
-      },
-    });
+    this.confirmation
+      .warn('', '::Pantry:ConsumeConfirmation')
+      .subscribe((status: Confirmation.Status) => {
+        if (status === Confirmation.Status.confirm) {
+          this.despensaService.marcarConsumido(id, { skipHandleError: true }).subscribe({
+            next: () => {
+              this.list.get();
+            },
+            error: () => {
+              this.toaster.error('::Pantry:Error:ConsumeFailed', '::Pantry:Error:ConnectionTitle');
+            },
+          });
+        }
+      });
   }
 
   deleteItem(id: string) {

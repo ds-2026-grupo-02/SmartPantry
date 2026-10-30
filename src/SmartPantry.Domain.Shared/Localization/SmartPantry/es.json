@@ -70,6 +70,7 @@
     "Pantry:Error:SaveFailed": "No se pudo guardar los cambios. Verifique la conexión con el servidor.",
     "Pantry:Error:ConsumeFailed": "No se pudo marcar el ítem como consumido. Verifique la conexión con el servidor.",
     "Pantry:Error:DeleteFailed": "No se pudo eliminar el ítem. Verifique la conexión con el servidor.",
-    "Pantry:Error:ConnectionTitle": "Error de conexión"
+    "Pantry:Error:ConnectionTitle": "Error de conexión",
+    "Pantry:ConsumeConfirmation": "¿Marcar elemento como consumido?"
   }
 }
