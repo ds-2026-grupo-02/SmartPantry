@@ -33,21 +33,19 @@
           <tr>
             <th>{{ '::Pantry:Product' | abpLocalization }}</th>
             <th>{{ '::Pantry:Quantity' | abpLocalization }}</th>
-            <th>{{ '::Pantry:Unit' | abpLocalization }}</th>
             <th>{{ '::Pantry:ExpirationDate' | abpLocalization }}</th>
             <th>{{ '::Pantry:Actions' | abpLocalization }}</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let item of items">
-            <td>{{ item.nombreProducto }}</td>
             <td>
-              <span *ngIf="item.cantidad != null">{{ item.cantidad }}</span>
-              <span *ngIf="item.cantidad == null" class="text-muted">{{ '::Pantry:WithoutQuantity' | abpLocalization }}</span>
+              <span *ngIf="getNombreProducto(item) as nombre">{{ nombre }}</span>
+              <span *ngIf="!getNombreProducto(item)" class="text-muted">{{ '::Pantry:WithoutName' | abpLocalization }}</span>
             </td>
             <td>
-              <span *ngIf="item.unidad">{{ item.unidad }}</span>
-              <span *ngIf="!item.unidad" class="text-muted">{{ '::Pantry:WithoutUnit' | abpLocalization }}</span>
+              <span *ngIf="item.cantidadProducto">{{ item.cantidadProducto }}</span>
+              <span *ngIf="!item.cantidadProducto" class="text-muted">{{ '::Pantry:WithoutQuantity' | abpLocalization }}</span>
             </td>
             <td>
               <span *ngIf="item.fechaVencimiento">{{ item.fechaVencimiento | date:'shortDate' }}</span>
@@ -87,35 +85,6 @@
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label">{{ '::Pantry:QuantityOptional' | abpLocalization }}</label>
-            <input
-              type="number"
-              step="1"
-              min="0"
-              class="form-control"
-              formControlName="cantidad"
-              (input)="onCantidadInput($event)"
-            />
-            <div *ngIf="(form.get('cantidad')?.invalid || cantidadInputInvalid) && form.get('cantidad')?.touched" class="text-danger small mt-1">
-              <div *ngIf="cantidadInputInvalid">{{ '::Pantry:Validation:CantidadEntera' | abpLocalization }}</div>
-              <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('min')">{{ '::Pantry:Validation:CantidadNegativa' | abpLocalization }}</div>
-              <div *ngIf="!cantidadInputInvalid && form.get('cantidad')?.hasError('pattern')">{{ '::Pantry:Validation:CantidadFormato' | abpLocalization }}</div>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">{{ '::Pantry:UnitOptional' | abpLocalization }}</label>
-            <input
-              type="text"
-              class="form-control"
-              formControlName="unidad"
-              [placeholder]="'::Pantry:UnitPlaceholder' | abpLocalization"
-              maxlength="32"
-            />
-            <div *ngIf="form.get('unidad')?.invalid && form.get('unidad')?.touched" class="text-danger small mt-1">
-              <div *ngIf="form.get('unidad')?.hasError('maxlength')">{{ '::Pantry:Validation:UnidadLongitud' | abpLocalization }}</div>
-            </div>
-          </div>
-          <div class="mb-3">
             <label class="form-label">{{ '::Pantry:ExpirationDateOptional' | abpLocalization }}</label>
             <input
               type="date"
@@ -134,7 +103,7 @@
           <button type="button" class="btn btn-secondary" (click)="closeModal()" [disabled]="isSaving">
             {{ '::Pantry:Cancel' | abpLocalization }}
           </button>
-          <button type="submit" class="btn btn-primary" [disabled]="form.invalid || cantidadInputInvalid || fechaInputInvalid || isSaving">
+          <button type="submit" class="btn btn-primary" [disabled]="form.invalid || fechaInputInvalid || isSaving">
             <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-1" role="status"></span>
             {{ '::Pantry:Save' | abpLocalization }}
           </button>

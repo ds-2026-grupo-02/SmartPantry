@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { ListService, LocalizationModule } from '@abp/ng.core';
+import { ReactiveFormsModule, FormBuilder, FormGroup, AbstractControl, ValidationErrors } from '@angular/forms';
+import { ListService, LocalizationModule, LocalizationService } from '@abp/ng.core';
 import { ConfirmationService, Confirmation, ToasterService } from '@abp/ng.theme.shared';
 import { DespensaService } from '../proxy/pantry-items/despensa.service';
 import { DespensaDto } from '../proxy/pantry-items/models';
@@ -61,7 +61,6 @@ export class PantryComponent implements OnInit {
   isSaving = false;
   editingId: string | null = null;
   form!: FormGroup;
-  cantidadInputInvalid = false;
   fechaInputInvalid = false;
 
   constructor(
@@ -69,6 +68,7 @@ export class PantryComponent implements OnInit {
     private despensaService: DespensaService,
     private confirmation: ConfirmationService,
     private toaster: ToasterService,
+    private localizationService: LocalizationService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef
   ) {
@@ -81,15 +81,16 @@ export class PantryComponent implements OnInit {
 
   buildForm() {
     this.form = this.fb.group({
-      cantidad: [null, [Validators.min(0), Validators.pattern(/^[0-9]+$/)]],
-      unidad: ['', [Validators.maxLength(32)]],
       fechaVencimiento: [null, [fechaValidaValidator]],
     });
   }
 
-  onCantidadInput(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.cantidadInputInvalid = input.validity.badInput;
+  getNombreProducto(item: DespensaDto): string | null {
+    const lang = (this.localizationService.currentLang || '').toLowerCase();
+    if (lang.startsWith('en')) {
+      return item.nombreProductoEn || item.nombreProductoEs || null;
+    }
+    return item.nombreProductoEs || item.nombreProductoEn || null;
   }
 
   onFechaInput(event: Event) {
@@ -142,7 +143,6 @@ export class PantryComponent implements OnInit {
 
   openEditModal(item: DespensaDto) {
     this.editingId = item.id ?? null;
-    this.cantidadInputInvalid = false;
     this.fechaInputInvalid = false;
     let fechaFormateada = null;
     if (item.fechaVencimiento) {
@@ -153,8 +153,6 @@ export class PantryComponent implements OnInit {
     }
 
     this.form.patchValue({
-      cantidad: typeof item.cantidad === 'number' ? Math.floor(item.cantidad) : null,
-      unidad: item.unidad ?? '',
       fechaVencimiento: fechaFormateada,
     });
     this.isModalOpen = true;
@@ -164,20 +162,16 @@ export class PantryComponent implements OnInit {
     this.isModalOpen = false;
     this.editingId = null;
     this.isSaving = false;
-    this.cantidadInputInvalid = false;
     this.fechaInputInvalid = false;
     this.form.reset();
   }
 
   save() {
-    if (this.form.invalid || !this.editingId || this.cantidadInputInvalid || this.fechaInputInvalid) return;
+    if (this.form.invalid || !this.editingId || this.fechaInputInvalid) return;
 
     this.isSaving = true;
-    const rawCantidad = this.form.value.cantidad;
     const formValue = {
-      ...this.form.value,
-      cantidad: rawCantidad !== null && rawCantidad !== '' ? Number(rawCantidad) : null,
-      unidad: this.form.value.unidad?.trim() || null,
+      fechaVencimiento: this.form.value.fechaVencimiento || null,
     };
 
     this.despensaService.update(this.editingId, formValue, { skipHandleError: true }).subscribe({
