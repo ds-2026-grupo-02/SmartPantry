@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Volo.Abp.Domain.Entities.Auditing;
 
 namespace SmartPantry.PantryItems;
@@ -7,8 +7,6 @@ public class PantryItem : FullAuditedAggregateRoot<Guid>
 {
     public Guid UserId { get; private set; }
     public Guid ProductoId { get; private set; }
-    public decimal Cantidad { get; private set; }
-    public string Unidad { get; private set; }
     public DateTime? FechaVencimiento { get; private set; }
     public bool EsConsumido { get; private set; }
 
@@ -18,15 +16,11 @@ public class PantryItem : FullAuditedAggregateRoot<Guid>
         Guid id,
         Guid userId,
         Guid productoId,
-        decimal cantidad,
-        string unidad,
         DateTime? fechaVencimiento)
         : base(id)
     {
         UserId = userId;
         ProductoId = productoId;
-        Cantidad = cantidad;
-        Unidad = unidad;
         FechaVencimiento = fechaVencimiento;
         EsConsumido = false;
     }
@@ -36,9 +30,9 @@ public class PantryItem : FullAuditedAggregateRoot<Guid>
     {
         FechaVencimiento = newExpirationDate;
     }
+
     public void MarcarComoConsumido()
     {
         EsConsumido = true;
-        Cantidad = 0;
     }
 }

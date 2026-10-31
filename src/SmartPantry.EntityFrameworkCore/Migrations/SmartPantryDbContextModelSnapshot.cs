@@ -29,9 +29,6 @@ namespace SmartPantry.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal>("Cantidad")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -83,11 +80,6 @@ namespace SmartPantry.Migrations
                     b.Property<Guid>("ProductoId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Unidad")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -100,6 +92,10 @@ namespace SmartPantry.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Cantidad")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("CodigoBarras")
                         .IsRequired()
@@ -118,8 +114,11 @@ namespace SmartPantry.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
 
-                    b.Property<string>("Nombre")
-                        .IsRequired()
+                    b.Property<string>("NombreEn")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("NombreEs")
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 

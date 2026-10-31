@@ -4,7 +4,6 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
-using SmartPantry.Productos;
 using Microsoft.AspNetCore.Authorization;
 
 namespace SmartPantry.Productos;
@@ -20,23 +19,26 @@ public class ProductoAppService :
     IProductoAppService
 {
     private readonly IRepository<Producto, Guid> _productoRepository;
+    private readonly IExternalProductCatalogClient _externalProductCatalogClient;
 
-    public ProductoAppService(IRepository<Producto, Guid> repository,IExternalProductCatalogClient externalProductCatalogClient)
-    : base(repository)
+    public ProductoAppService(
+        IRepository<Producto, Guid> repository,
+        IExternalProductCatalogClient externalProductCatalogClient)
+        : base(repository)
     {
         _productoRepository = repository;
         _externalProductCatalogClient = externalProductCatalogClient;
     }
-
-    private readonly IExternalProductCatalogClient _externalProductCatalogClient;
 
     public override async Task<ProductoDto> CreateAsync(CreateUpdateProductoDto input)
     {
         // 1. Instanciar el Agregado (Aplica internamente las validaciones del dominio)
         var producto = new Producto(
             GuidGenerator.Create(),
-            input.Nombre,
-            input.CodigoBarras
+            input.NombreEs,
+            input.NombreEn,
+            input.CodigoBarras,
+            input.Cantidad
         );
 
         // 2. Persistir a través del repositorio
@@ -50,10 +52,10 @@ public class ProductoAppService :
     {
         // Obtiene la entidad por Id (Si no existe, ABP lanza EntityNotFoundException/404 de forma predeterminada)
         var producto = await _productoRepository.GetAsync(id);
-        producto.ModificarDatos(input.Nombre, input.CodigoBarras);
+        producto.ModificarDatos(input.NombreEs, input.NombreEn, input.CodigoBarras, input.Cantidad);
         await _productoRepository.UpdateAsync(producto);
 
-    return MapToGetOutputDto(producto);
+        return MapToGetOutputDto(producto);
     }
 
     public async Task<ExternalProductDto?> SearchByBarcodeAsync(SearchProductInputDto input)
@@ -62,7 +64,7 @@ public class ProductoAppService :
         if (input == null || string.IsNullOrWhiteSpace(input.CodigoBarras))
         {
             throw new UserFriendlyException("El código de barras es requerido para realizar la búsqueda.");
-        };
+        }
 
         // 2. Consultar el cliente externo (Open Food Facts API v3)
         var externalProduct = await _externalProductCatalogClient.GetByBarcodeAsync(input.CodigoBarras.Trim());
@@ -70,9 +72,8 @@ public class ProductoAppService :
         // 3. Manejo de producto no encontrado (RF-05 / RF-09)
         if (externalProduct == null)
         {
-            // Lanzar BusinessException / UserFriendlyException para que ABP devuelva un error HTTP controlado
             throw new UserFriendlyException($"No se encontró ningún producto con el código de barras '{input.CodigoBarras}'.");
-        };
+        }
 
         return externalProduct;
     }
