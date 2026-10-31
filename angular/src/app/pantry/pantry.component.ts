@@ -2,7 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ListService, LocalizationModule, LocalizationService } from '@abp/ng.core';
-import { ConfirmationService, Confirmation, ToasterService } from '@abp/ng.theme.shared';
+import { ConfirmationService, Confirmation, ToasterService, ThemeSharedModule } from '@abp/ng.theme.shared';
 import { DespensaService } from '../proxy/pantry-items/despensa.service';
 import { DespensaDto } from '../proxy/pantry-items/models';
 
@@ -44,7 +44,7 @@ export function fechaValidaValidator(control: AbstractControl): ValidationErrors
 @Component({
   selector: 'app-pantry',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LocalizationModule],
+  imports: [CommonModule, ReactiveFormsModule, LocalizationModule, ThemeSharedModule],
   providers: [ListService],
   templateUrl: './pantry.component.html',
 })

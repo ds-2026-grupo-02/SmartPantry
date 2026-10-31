@@ -22,54 +22,80 @@
     </div>
 
     <!-- 3. ESTADO DE LISTA VACÍA -->
-    <div *ngIf="!isLoading && !hasError && items.length === 0" class="text-center my-4">
+    <div *ngIf="!isLoading && !hasError && totalCount === 0" class="text-center my-4">
       <p class="text-muted">{{ '::Pantry:Empty' | abpLocalization }}</p>
     </div>
 
-    <!-- 4. ESTADO DE RESULTADOS (RF-09 aplicado a datos faltantes) -->
-    <div *ngIf="!isLoading && !hasError && items.length > 0" class="table-responsive">
-      <table class="table table-striped table-hover">
-        <thead>
-          <tr>
-            <th>{{ '::Pantry:Product' | abpLocalization }}</th>
-            <th>{{ '::Pantry:Quantity' | abpLocalization }}</th>
-            <th>{{ '::Pantry:ExpirationDate' | abpLocalization }}</th>
-            <th>{{ '::Pantry:Actions' | abpLocalization }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of items">
-            <td>
-              <span *ngIf="getNombreProducto(item) as nombre">{{ nombre }}</span>
-              <span *ngIf="!getNombreProducto(item)" class="text-muted">{{ '::Pantry:WithoutName' | abpLocalization }}</span>
-            </td>
-            <td>
-              <span *ngIf="item.cantidadProducto">{{ item.cantidadProducto }}</span>
-              <span *ngIf="!item.cantidadProducto" class="text-muted">{{ '::Pantry:WithoutQuantity' | abpLocalization }}</span>
-            </td>
-            <td>
-              <span *ngIf="item.fechaVencimiento">{{ item.fechaVencimiento | date:'shortDate' }}</span>
-              <span *ngIf="!item.fechaVencimiento" class="text-muted">{{ '::Pantry:WithoutDate' | abpLocalization }}</span>
-            </td>
-            <td>
-              <button class="btn btn-sm btn-primary me-1" (click)="openEditModal(item)">
+    <!-- 4. ESTADO DE RESULTADOS CON NGX-DATATABLE ESTÁNDAR ABP RESPONSIVE -->
+    <div *ngIf="!hasError && totalCount > 0" class="w-100">
+      <ngx-datatable
+        default
+        [rows]="items"
+        [count]="totalCount"
+        [list]="list"
+        [scrollbarH]="false"
+      >
+        <!-- Columna Producto (bilingüe con fallback) -->
+        <ngx-datatable-column
+          [name]="'::Pantry:Product' | abpLocalization"
+          [sortable]="false"
+        >
+          <ng-template let-row="row" ngx-datatable-cell-template>
+            <span *ngIf="getNombreProducto(row) as nombre" class="text-break">{{ nombre }}</span>
+            <span *ngIf="!getNombreProducto(row)" class="text-muted">{{ '::Pantry:WithoutName' | abpLocalization }}</span>
+          </ng-template>
+        </ngx-datatable-column>
+
+        <!-- Columna Cantidad del producto (ej: 200 mL, 1 kg) -->
+        <ngx-datatable-column
+          [name]="'::Pantry:Quantity' | abpLocalization"
+          [sortable]="false"
+        >
+          <ng-template let-row="row" ngx-datatable-cell-template>
+            <span *ngIf="row.cantidadProducto">{{ row.cantidadProducto }}</span>
+            <span *ngIf="!row.cantidadProducto" class="text-muted">{{ '::Pantry:WithoutQuantity' | abpLocalization }}</span>
+          </ng-template>
+        </ngx-datatable-column>
+
+        <!-- Columna Fecha de Vencimiento -->
+        <ngx-datatable-column
+          [name]="'::Pantry:ExpirationDate' | abpLocalization"
+          [sortable]="false"
+        >
+          <ng-template let-row="row" ngx-datatable-cell-template>
+            <span *ngIf="row.fechaVencimiento">{{ row.fechaVencimiento | date:'shortDate' }}</span>
+            <span *ngIf="!row.fechaVencimiento" class="text-muted">{{ '::Pantry:WithoutDate' | abpLocalization }}</span>
+          </ng-template>
+        </ngx-datatable-column>
+
+        <!-- Columna Acciones -->
+        <ngx-datatable-column
+          [name]="'::Pantry:Actions' | abpLocalization"
+          [sortable]="false"
+        >
+          <ng-template let-row="row" ngx-datatable-cell-template>
+            <div class="d-flex flex-wrap gap-1">
+              <button class="btn btn-sm btn-primary" (click)="openEditModal(row)">
                 {{ '::Pantry:Edit' | abpLocalization }}
               </button>
-              <button class="btn btn-sm btn-success me-1"
-                      *ngIf="item.id"
-                      (click)="marcarConsumido(item.id)">
+              <button
+                class="btn btn-sm btn-success"
+                *ngIf="row.id"
+                (click)="marcarConsumido(row.id)"
+              >
                 {{ '::Pantry:Consume' | abpLocalization }}
               </button>
-
-              <button class="btn btn-sm btn-danger"
-                      *ngIf="item.id"
-                      (click)="deleteItem(item.id)">
+              <button
+                class="btn btn-sm btn-danger"
+                *ngIf="row.id"
+                (click)="deleteItem(row.id)"
+              >
                 {{ '::Pantry:Delete' | abpLocalization }}
               </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+          </ng-template>
+        </ngx-datatable-column>
+      </ngx-datatable>
     </div>
   </div>
 </div>
