@@ -1,6 +1,5 @@
-﻿using Shouldly;
+using Shouldly;
 using SmartPantry.PantryItems;
-using SmartPantry.Productos;
 using SmartPantry.Warnings;
 using System;
 using System.Linq;
@@ -35,7 +34,7 @@ public class ExpirationWarningManager_Tests : SmartPantryEntityFrameworkCoreTest
         var expirationDateUtc = referenceDateUtc.AddDays(offsetDays);
         var itemId = Guid.NewGuid();
 
-        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), 1, "Unidad", expirationDateUtc);
+        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), expirationDateUtc);
 
         await WithUnitOfWorkAsync(async () => await _pantryItemRepository.InsertAsync(item));
 
@@ -64,10 +63,10 @@ public class ExpirationWarningManager_Tests : SmartPantryEntityFrameworkCoreTest
         var referenceDateUtc = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc);
 
         // Ítem sin fecha de vencimiento
-        var undatedItem = new PantryItem(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1m, "Unidad", null);
+        var undatedItem = new PantryItem(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), null);
 
         // Ítem consumido (invocando el método de dominio)
-        var consumedItem = new PantryItem(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1m, "Unidad", referenceDateUtc.AddDays(1));
+        var consumedItem = new PantryItem(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), referenceDateUtc.AddDays(1));
         consumedItem.MarcarComoConsumido();
 
         await WithUnitOfWorkAsync(async () =>
@@ -88,13 +87,14 @@ public class ExpirationWarningManager_Tests : SmartPantryEntityFrameworkCoreTest
             warningsConsumed.Count.ShouldBe(0);
         });
     }
+
     // 3. REQUERIMIENTO: Demostrar Idempotencia (Doble ejecución sobre los mismos datos)
     [Fact]
     public async Task Should_Be_Idempotent_When_Executed_Multiple_Times()
     {
         var referenceDateUtc = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc);
         var itemId = Guid.NewGuid();
-        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), 1, "Unidad", referenceDateUtc.AddDays(1));
+        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), referenceDateUtc.AddDays(1));
 
         await WithUnitOfWorkAsync(async () => await _pantryItemRepository.InsertAsync(item));
 
@@ -122,7 +122,7 @@ public class ExpirationWarningManager_Tests : SmartPantryEntityFrameworkCoreTest
         var initialExpiration = referenceDateUtc.AddDays(1);
         var updatedExpiration = referenceDateUtc.AddDays(2); // Ambas dentro del umbral de 3 días
 
-        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), 1, "Unidad", initialExpiration);
+        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), initialExpiration);
         await WithUnitOfWorkAsync(async () => await _pantryItemRepository.InsertAsync(item));
 
         // 1. Generar advertencia inicial
@@ -157,7 +157,7 @@ public class ExpirationWarningManager_Tests : SmartPantryEntityFrameworkCoreTest
         var itemId = Guid.NewGuid();
 
         // 1. Ítem activo dentro del umbral -> Genera advertencia
-        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), 1, "Unidad", referenceDateUtc.AddDays(2));
+        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), referenceDateUtc.AddDays(2));
         await WithUnitOfWorkAsync(async () => await _pantryItemRepository.InsertAsync(item));
         await WithUnitOfWorkAsync(async () => await _warningManager.ProcessExpirationsAsync(referenceDateUtc, thresholdDays: 3));
 
@@ -186,14 +186,13 @@ public class ExpirationWarningManager_Tests : SmartPantryEntityFrameworkCoreTest
             warnings.First().IsActive.ShouldBeFalse();
         });
     }
-   
 
     [Fact]
     public async Task Should_Deactivate_Warning_When_Item_Becomes_Undated()
     {
         var referenceDateUtc = new DateTime(2026, 10, 10, 0, 0, 0, DateTimeKind.Utc);
         var itemId = Guid.NewGuid();
-        var pantryItem = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), 1m, "Unidad", referenceDateUtc.AddDays(2));
+        var pantryItem = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), referenceDateUtc.AddDays(2));
 
         await WithUnitOfWorkAsync(async () =>
         {
@@ -224,7 +223,7 @@ public class ExpirationWarningManager_Tests : SmartPantryEntityFrameworkCoreTest
             warnings.First().IsActive.ShouldBeFalse();
         });
     }
-    
+
     // Reactivación de una advertencia previamente desactivada
     [Fact]
     public async Task Should_Reactivate_Deactivated_Warning_When_Item_Is_Back_In_Threshold()
@@ -233,7 +232,7 @@ public class ExpirationWarningManager_Tests : SmartPantryEntityFrameworkCoreTest
         var itemId = Guid.NewGuid();
 
         // Paso 1: Ítem próximo a vencer (+1 día) -> Se genera advertencia activa
-        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), 1, "Unidad", referenceDateUtc.AddDays(1));
+        var item = new PantryItem(itemId, Guid.NewGuid(), Guid.NewGuid(), referenceDateUtc.AddDays(1));
         await WithUnitOfWorkAsync(async () => await _pantryItemRepository.InsertAsync(item));
         await WithUnitOfWorkAsync(async () => await _warningManager.ProcessExpirationsAsync(referenceDateUtc, thresholdDays: 3));
 
@@ -280,4 +279,3 @@ public class ExpirationWarningManager_Tests : SmartPantryEntityFrameworkCoreTest
         });
     }
 }
-
