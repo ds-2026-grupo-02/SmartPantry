@@ -1,10 +1,5 @@
 import type { EntityDto } from '@abp/ng.core';
 
-export interface CreateDespensaDto {
-  productoId: string;
-  fechaVencimiento?: string | null;
-}
-
 export interface DespensaDto extends EntityDto<string> {
   userId?: string;
   productoId?: string;
@@ -15,7 +10,11 @@ export interface DespensaDto extends EntityDto<string> {
   esConsumido?: boolean;
 }
 
+export interface CreateDespensaDto {
+  productoId: string;
+  fechaVencimiento?: string | null;
+}
+
 export interface UpdateDespensaDto {
   fechaVencimiento?: string | null;
-  cantidadProducto: string | null;
 }

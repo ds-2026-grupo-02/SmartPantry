@@ -1,4 +1,4 @@
-import type { CreateDespensaDto, DespensaDto, UpdateDespensaDto } from './models';
+import type { DespensaDto, UpdateDespensaDto } from './models';
 import { RestService, Rest } from '@abp/ng.core';
 import type { PagedAndSortedResultRequestDto, PagedResultDto } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
@@ -9,16 +9,6 @@ import { Injectable, inject } from '@angular/core';
 export class DespensaService {
   private restService = inject(RestService);
   apiName = 'Default';
-  
-
-  create = (input: CreateDespensaDto, config?: Partial<Rest.Config>) =>
-    this.restService.request<any, DespensaDto>({
-      method: 'POST',
-      headers: { Accept: 'application/json' },
-      url: '/api/app/despensa',
-      body: input,
-    },
-    { apiName: this.apiName,...config });
   
 
   delete = (id: string, config?: Partial<Rest.Config>) =>
