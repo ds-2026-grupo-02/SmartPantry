@@ -172,6 +172,7 @@ export class PantryComponent implements OnInit {
     this.isSaving = true;
     const formValue = {
       fechaVencimiento: this.form.value.fechaVencimiento || null,
+      cantidadProducto: null,
     };
 
     this.despensaService.update(this.editingId, formValue, { skipHandleError: true }).subscribe({
