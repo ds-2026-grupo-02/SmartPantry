@@ -82,7 +82,8 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
     {
         var item = await GetItemDelUsuarioOThrowAsync(id);
 
-        item.UpdateExpirationDate(input.FechaVencimiento);
+        // Actualizamos usando el método de dominio de la entidad
+        item.UpdateDetails(input.FechaVencimiento, input.CantidadProducto);  
 
         await _pantryItemRepository.UpdateAsync(item);
 
@@ -92,7 +93,6 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
         {
             dto.NombreProductoEs = producto.NombreEs;
             dto.NombreProductoEn = producto.NombreEn;
-            dto.CantidadProducto = producto.Cantidad;
         }
         return dto;
     }
@@ -112,13 +112,13 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
 
     private async Task<PantryItem> GetItemDelUsuarioOThrowAsync(Guid id)
     {
-        var item = await _pantryItemRepository.FindAsync(id);
+        var item = await _pantryItemRepository.FindAsync(id);    //busca un registro en la tabla de la despensa (PantryItem) cuyo id coincida con el que le pasamos
 
-        if (item == null || item.UserId != CurrentUser.GetId())
+        if (item == null || item.UserId != CurrentUser.GetId())  //verifica que el item exista y que pertenezca al usuario que esta logueado en ese momento
         {
-            throw new EntityNotFoundException(typeof(PantryItem), id);
+            throw new EntityNotFoundException(typeof(PantryItem), id);   //si no se cumple alguna de las dos excepciones lanza un error
         }
 
-        return item;
+        return item;  //si esta todo bien devuelve el objeto item
     }
 }
