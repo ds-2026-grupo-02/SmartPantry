@@ -24,7 +24,9 @@ public class ProductoAppServiceTests : SmartPantryEntityFrameworkCoreTestBase
         var input = new CreateUpdateProductoDto
         {
             CodigoBarras = "7791234567890",
-            Nombre = "Arroz Largo Fino"
+            NombreEs = "Arroz Largo Fino",
+            NombreEn = "Long Grain Rice",
+            Cantidad = "1 kg"
         };
 
         var result = await _productoAppService.CreateAsync(input);
@@ -32,16 +34,19 @@ public class ProductoAppServiceTests : SmartPantryEntityFrameworkCoreTestBase
 
         fetched.ShouldNotBeNull();
         fetched.Id.ShouldBe(result.Id);
-        fetched.Nombre.ShouldBe("Arroz Largo Fino");
+        fetched.NombreEs.ShouldBe("Arroz Largo Fino");
+        fetched.NombreEn.ShouldBe("Long Grain Rice");
+        fetched.Cantidad.ShouldBe("1 kg");
     }
 
     [Fact]
-    public async Task Should_Not_Create_Producto_With_Missing_Required_Fields()
+    public async Task Should_Not_Create_Producto_With_Missing_Both_Names()
     {
         var input = new CreateUpdateProductoDto
         {
             CodigoBarras = "7791234567890",
-            Nombre = ""
+            NombreEs = "",
+            NombreEn = ""
         };
 
         await Should.ThrowAsync<AbpValidationException>(() => _productoAppService.CreateAsync(input));
@@ -54,7 +59,8 @@ public class ProductoAppServiceTests : SmartPantryEntityFrameworkCoreTestBase
         var createInput = new CreateUpdateProductoDto
         {
             CodigoBarras = "7799999999999",
-            Nombre = "Fideos Tallarines"
+            NombreEs = "Fideos Tallarines",
+            Cantidad = "500 g"
         };
         var creado = await _productoAppService.CreateAsync(createInput);
         creado.Id.ShouldNotBe(Guid.Empty);
@@ -72,15 +78,19 @@ public class ProductoAppServiceTests : SmartPantryEntityFrameworkCoreTestBase
         var updateInput = new CreateUpdateProductoDto
         {
             CodigoBarras = "7799999999999",
-            Nombre = "Fideos Tallarines 500g"
+            NombreEs = "Fideos Tallarines",
+            NombreEn = "Noodles",
+            Cantidad = "500 g"
         };
         var modificado = await _productoAppService.UpdateAsync(creado.Id, updateInput);
-        modificado.Nombre.ShouldBe("Fideos Tallarines 500g");
+        modificado.NombreEs.ShouldBe("Fideos Tallarines");
+        modificado.NombreEn.ShouldBe("Noodles");
 
         // 4. CONSULTAR POR ID
         var consultado = await _productoAppService.GetAsync(creado.Id);
         consultado.ShouldNotBeNull();
-        consultado.Nombre.ShouldBe("Fideos Tallarines 500g");
+        consultado.NombreEs.ShouldBe("Fideos Tallarines");
+        consultado.NombreEn.ShouldBe("Noodles");
 
         // 5. ELIMINAR
         await _productoAppService.DeleteAsync(creado.Id);

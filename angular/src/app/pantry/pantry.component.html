@@ -1,0 +1,140 @@
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h3>{{ '::Menu:Pantry' | abpLocalization }}</h3>
+  </div>
+
+  <div class="card-body">
+    <!-- 1. ESTADO DE CARGA -->
+    <div *ngIf="isLoading" class="text-center my-4">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2">{{ '::Loading' | abpLocalization }}...</p>
+    </div>
+
+    <!-- 2. ESTADO DE ERROR (BackEnd detenido o falla de conexion) -->
+    <div *ngIf="hasError && !isLoading" class="alert alert-danger text-center my-4">
+      <h5 class="alert-heading mb-2">
+        <i class="fas fa-exclamation-triangle me-2"></i>{{ '::Pantry:ServiceUnavailable' | abpLocalization }}
+      </h5>
+      <p class="mb-3">{{ '::Pantry:ServiceUnavailableMessage' | abpLocalization }}</p>
+      <button class="btn btn-outline-danger" (click)="loadItems()">
+        <i class="fas fa-sync-alt me-1"></i> {{ '::Pantry:Retry' | abpLocalization }}
+      </button>
+    </div>
+
+    <!-- 3. ESTADO DE LISTA VACÍA -->
+    <div *ngIf="!isLoading && !hasError && totalCount === 0" class="text-center my-4">
+      <p class="text-muted">{{ '::Pantry:Empty' | abpLocalization }}</p>
+    </div>
+
+    <!-- 4. ESTADO DE RESULTADOS CON NGX-DATATABLE ESTÁNDAR ABP RESPONSIVE -->
+    <div *ngIf="!hasError && totalCount > 0" class="w-100">
+      <ngx-datatable
+        default
+        [rows]="items"
+        [count]="totalCount"
+        [list]="list"
+        [scrollbarH]="false"
+      >
+        <!-- Columna Producto (bilingüe con fallback) -->
+        <ngx-datatable-column
+          [name]="'::Pantry:Product' | abpLocalization"
+          [sortable]="false"
+        >
+          <ng-template let-row="row" ngx-datatable-cell-template>
+            <span *ngIf="getNombreProducto(row) as nombre" class="text-break">{{ nombre }}</span>
+            <span *ngIf="!getNombreProducto(row)" class="text-muted">{{ '::Pantry:WithoutName' | abpLocalization }}</span>
+          </ng-template>
+        </ngx-datatable-column>
+
+        <!-- Columna Cantidad del producto (ej: 200 mL, 1 kg) -->
+        <ngx-datatable-column
+          [name]="'::Pantry:Quantity' | abpLocalization"
+          [sortable]="false"
+        >
+          <ng-template let-row="row" ngx-datatable-cell-template>
+            <span *ngIf="row.cantidadProducto">{{ row.cantidadProducto }}</span>
+            <span *ngIf="!row.cantidadProducto" class="text-muted">{{ '::Pantry:WithoutQuantity' | abpLocalization }}</span>
+          </ng-template>
+        </ngx-datatable-column>
+
+        <!-- Columna Fecha de Vencimiento -->
+        <ngx-datatable-column
+          [name]="'::Pantry:ExpirationDate' | abpLocalization"
+          [sortable]="false"
+        >
+          <ng-template let-row="row" ngx-datatable-cell-template>
+            <span *ngIf="row.fechaVencimiento">{{ row.fechaVencimiento | date:'shortDate' }}</span>
+            <span *ngIf="!row.fechaVencimiento" class="text-muted">{{ '::Pantry:WithoutDate' | abpLocalization }}</span>
+          </ng-template>
+        </ngx-datatable-column>
+
+        <!-- Columna Acciones -->
+        <ngx-datatable-column
+          [name]="'::Pantry:Actions' | abpLocalization"
+          [sortable]="false"
+        >
+          <ng-template let-row="row" ngx-datatable-cell-template>
+            <div class="d-flex flex-wrap gap-1">
+              <button class="btn btn-sm btn-primary" (click)="openEditModal(row)">
+                {{ '::Pantry:Edit' | abpLocalization }}
+              </button>
+              <button
+                class="btn btn-sm btn-success"
+                *ngIf="row.id"
+                (click)="marcarConsumido(row.id)"
+              >
+                {{ '::Pantry:Consume' | abpLocalization }}
+              </button>
+              <button
+                class="btn btn-sm btn-danger"
+                *ngIf="row.id"
+                (click)="deleteItem(row.id)"
+              >
+                {{ '::Pantry:Delete' | abpLocalization }}
+              </button>
+            </div>
+          </ng-template>
+        </ngx-datatable-column>
+      </ngx-datatable>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Formulario Reactivo de Edición -->
+<div class="modal d-block" tabindex="-1" *ngIf="isModalOpen" style="background: rgba(0,0,0,0.5)">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ '::Pantry:EditModalTitle' | abpLocalization }}</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">{{ '::Pantry:ExpirationDateOptional' | abpLocalization }}</label>
+            <input
+              type="date"
+              class="form-control"
+              formControlName="fechaVencimiento"
+              (input)="onFechaInput($event)"
+            />
+            <div *ngIf="(form.get('fechaVencimiento')?.invalid || fechaInputInvalid) && form.get('fechaVencimiento')?.touched" class="text-danger small mt-1">
+              <div *ngIf="fechaInputInvalid || form.get('fechaVencimiento')?.hasError('fechaInvalida')">
+                {{ '::Pantry:Validation:FechaInvalida' | abpLocalization }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()" [disabled]="isSaving">
+            {{ '::Pantry:Cancel' | abpLocalization }}
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="form.invalid || fechaInputInvalid || isSaving">
+            <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-1" role="status"></span>
+            {{ '::Pantry:Save' | abpLocalization }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

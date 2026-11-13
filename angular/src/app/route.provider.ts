@@ -15,5 +15,12 @@ function configureRoutes() {
         order: 1,
         layout: eLayoutType.application,
       },
+      {
+        path: '/pantry',
+        name: '::Menu:Pantry',
+        iconClass: 'fas fa-shopping-basket',
+        order: 2,
+        layout: eLayoutType.application,
+      },
   ]);
 }
