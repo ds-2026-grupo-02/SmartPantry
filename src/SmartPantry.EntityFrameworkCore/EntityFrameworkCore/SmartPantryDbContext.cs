@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using SmartPantry.PantryItems;
+using SmartPantry.Despensa;
 using SmartPantry.Productos;
-using SmartPantry.Warnings; // Importante para ExpirationWarning
+using SmartPantry.Advertencias; // Importante para ExpirationWarning
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.BlobStoring.Database.EntityFrameworkCore;
@@ -44,8 +44,8 @@ public class SmartPantryDbContext :
 
     /* Entidades Propias del Dominio */
     public DbSet<Producto> Productos { get; set; }
-    public DbSet<PantryItem> PantryItems { get; set; }
-    public DbSet<ExpirationWarning> ExpirationWarnings { get; set; }
+    public DbSet<ItemDespensa> ItemsDespensa { get; set; }
+    public DbSet<AdvertenciaVencimiento> AdvertenciasVencimiento { get; set; }
 
     public SmartPantryDbContext(DbContextOptions<SmartPantryDbContext> options)
         : base(options)
@@ -71,7 +71,7 @@ public class SmartPantryDbContext :
         /* Mapeo de Entidades */
         builder.Entity<Producto>(b =>
         {
-            b.ToTable("Productos");
+            b.ToTable(SmartPantryConsts.DbTablePrefix + "Productos", SmartPantryConsts.DbSchema);
             b.ConfigureByConvention();
 
             b.Property(x => x.NombreEs)
@@ -88,23 +88,23 @@ public class SmartPantryDbContext :
              .HasMaxLength(ProductoConsts.MaxCodigoBarrasLength);
         });
 
-        builder.Entity<PantryItem>(b =>
+        builder.Entity<ItemDespensa>(b =>
         {
-            b.ToTable("AppPantryItems");
+            b.ToTable(SmartPantryConsts.DbTablePrefix + "ItemsDespensa", SmartPantryConsts.DbSchema);
             b.ConfigureByConvention();
         });
 
-        builder.Entity<ExpirationWarning>(b =>
+        builder.Entity<AdvertenciaVencimiento>(b =>
         {
-            b.ToTable("AppExpirationWarnings");
+            b.ToTable(SmartPantryConsts.DbTablePrefix + "AdvertenciasVencimiento", SmartPantryConsts.DbSchema);
             b.ConfigureByConvention();
 
-            b.Property(x => x.WarningType)
+            b.Property(x => x.TipoAdvertencia)
              .IsRequired()
              .HasMaxLength(64);
 
             // Índice único compuesto para asegurar la idempotencia requerida en el TP08
-            b.HasIndex(x => new { x.PantryItemId, x.WarningType })
+            b.HasIndex(x => new { x.ItemDespensaId, x.TipoAdvertencia })
              .IsUnique();
         });
     }

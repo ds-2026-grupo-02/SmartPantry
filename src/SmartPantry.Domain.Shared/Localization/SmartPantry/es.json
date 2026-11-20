@@ -1,6 +1,6 @@
 {
-  "culture": "es",
-  "texts": {
+  "Culture": "es",
+  "Texts": {
     "AppName": "SmartPantry",
     "Menu:Home": "Hogar",
     "Menu:ContactUs": "Contáctenos",
@@ -45,8 +45,6 @@
     "Pantry:Empty": "No tienes ningún ítem registrado en tu despensa.",
     "Pantry:Product": "Producto",
     "Pantry:Quantity": "Cantidad",
-    "Pantry:QuantityOptional": "Cantidad (opcional)",
-    "Pantry:Unit": "Unidad",
     "Pantry:UnitOptional": "Unidad (opcional)",
     "Pantry:ExpirationDate": "Fecha de vencimiento",
     "Pantry:ExpirationDateOptional": "Fecha de vencimiento (opcional)",
@@ -59,7 +57,6 @@
     "Pantry:Delete": "Eliminar",
     "Pantry:EditModalTitle": "Editar Ítem de Despensa",
     "Pantry:UnitPlaceholder": "paquetes, botellas, latas...",
-    "Pantry:Validation:CantidadEntera": "La cantidad debe ser un número entero válido (no se permiten letras ni caracteres especiales).",
     "Pantry:Validation:CantidadNegativa": "La cantidad no puede ser negativa.",
     "Pantry:Validation:CantidadFormato": "La cantidad debe ser un número entero.",
     "Pantry:Validation:UnidadLongitud": "La unidad no puede superar los 32 caracteres.",

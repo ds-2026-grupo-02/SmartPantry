@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SmartPantry.Productos
+namespace SmartPantry.CatalogoExterno
 {
     public interface IExternalProductCatalogClient
     {

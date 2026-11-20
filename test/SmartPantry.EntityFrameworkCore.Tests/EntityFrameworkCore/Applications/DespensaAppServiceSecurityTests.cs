@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Shouldly;
-using SmartPantry.PantryItems;
+using SmartPantry.Despensa;
 using SmartPantry.Productos;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Entities;
@@ -18,14 +18,14 @@ public class DespensaAppServiceSecurityTests : SmartPantryEntityFrameworkCoreTes
 {
     private readonly IDespensaAppService _despensaAppService;
     private readonly IRepository<Producto, Guid> _productoRepository;
-    private readonly IRepository<PantryItem, Guid> _pantryItemRepository;
+    private readonly IRepository<ItemDespensa, Guid> _pantryItemRepository;
     private readonly ICurrentPrincipalAccessor _currentPrincipalAccessor;
 
     public DespensaAppServiceSecurityTests()
     {
         _despensaAppService = GetRequiredService<IDespensaAppService>();
         _productoRepository = GetRequiredService<IRepository<Producto, Guid>>();
-        _pantryItemRepository = GetRequiredService<IRepository<PantryItem, Guid>>();
+        _pantryItemRepository = GetRequiredService<IRepository<ItemDespensa, Guid>>();
         _currentPrincipalAccessor = GetRequiredService<ICurrentPrincipalAccessor>();
     }
 
@@ -49,7 +49,7 @@ public class DespensaAppServiceSecurityTests : SmartPantryEntityFrameworkCoreTes
         var user2Id = Guid.NewGuid();
 
         var producto = await _productoRepository.InsertAsync(
-            new Producto(Guid.NewGuid(), "7790000000001", "Arroz", "Rice", "1 kg")
+            new Producto(Guid.NewGuid(), "Arroz", "Rice", "7790000000001", "1 kg")
         );
 
         // Usuario 1 agrega un ítem a su despensa
@@ -89,7 +89,7 @@ public class DespensaAppServiceSecurityTests : SmartPantryEntityFrameworkCoreTes
         var fechaModificada = DateTime.Today.AddDays(20);
 
         var producto = await _productoRepository.InsertAsync(
-            new Producto(Guid.NewGuid(), "7790000000002", "Leche", "Milk", "1 L")
+            new Producto(Guid.NewGuid(), "Leche", "Milk", "7790000000002", "1 L")
         );
 
         Guid itemUser1Id;
@@ -128,7 +128,7 @@ public class DespensaAppServiceSecurityTests : SmartPantryEntityFrameworkCoreTes
         var user2Id = Guid.NewGuid();
 
         var producto = await _productoRepository.InsertAsync(
-            new Producto(Guid.NewGuid(), "7790000000003", "Fideos", "Pasta", "500 g")
+            new Producto(Guid.NewGuid(), "Fideos", "Pasta", "7790000000003", "500 g")
         );
 
         Guid itemUser1Id;

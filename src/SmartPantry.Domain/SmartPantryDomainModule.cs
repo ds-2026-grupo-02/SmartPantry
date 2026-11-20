@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SmartPantry.Localization;
 using SmartPantry.MultiTenancy;
-using SmartPantry.Warnings;
+using SmartPantry.Advertencias;
 //using System;
 using Volo.Abp;
 using Volo.Abp.Localization;

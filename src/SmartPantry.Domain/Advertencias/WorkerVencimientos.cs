@@ -6,11 +6,11 @@ using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Threading;
 using Volo.Abp.Uow;
 
-namespace SmartPantry.Warnings;
+namespace SmartPantry.Advertencias;
 
-public class ExpirationWorker : AsyncPeriodicBackgroundWorkerBase
+public class WorkerVencimientos : AsyncPeriodicBackgroundWorkerBase
 {
-    public ExpirationWorker(
+    public WorkerVencimientos(
         AbpAsyncTimer timer,
         IServiceScopeFactory serviceScopeFactory)
         : base(timer, serviceScopeFactory)
@@ -27,7 +27,7 @@ public class ExpirationWorker : AsyncPeriodicBackgroundWorkerBase
         try
         {
             // Resolver el servicio de dominio desde el alcance de la ejecución (Scope)
-            var warningManager = workerContext.ServiceProvider.GetRequiredService<ExpirationWarningManager>();
+            var warningManager = workerContext.ServiceProvider.GetRequiredService<GestorAdvertenciasVencimiento>();
 
             await warningManager.ProcessExpirationsAsync(DateTime.UtcNow);
 

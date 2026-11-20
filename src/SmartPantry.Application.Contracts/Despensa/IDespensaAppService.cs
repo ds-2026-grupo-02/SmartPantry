@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
-namespace SmartPantry.PantryItems;
+namespace SmartPantry.Despensa;
 
 public interface IDespensaAppService : IApplicationService
 {
