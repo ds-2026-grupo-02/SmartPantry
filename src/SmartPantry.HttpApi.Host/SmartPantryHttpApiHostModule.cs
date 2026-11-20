@@ -5,7 +5,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundWorkers; // Requerido para context.AddBackgroundWorkerAsync
-using SmartPantry.Warnings;
+using SmartPantry.Advertencias;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
@@ -42,7 +42,7 @@ using Volo.Abp.OpenIddict;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.Studio.Client.AspNetCore;
 using Volo.Abp.Security.Claims;
-using SmartPantry.Productos;
+using SmartPantry.CatalogoExterno;
 
 namespace SmartPantry;
 
@@ -330,7 +330,7 @@ public class SmartPantryHttpApiHostModule : AbpModule
         app.UseConfiguredEndpoints();
 
         // Registra el Background Worker para que se ejecute periódicamente cuando el Host esté corriendo
-        await context.AddBackgroundWorkerAsync<ExpirationWorker>();
+        await context.AddBackgroundWorkerAsync<WorkerVencimientos>();
     }
 }
 

@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace SmartPantry.PantryItems;
+namespace SmartPantry.Despensa;
 
 public class CreateDespensaDto
 {

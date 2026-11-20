@@ -1,6 +1,6 @@
 using System;
 
-namespace SmartPantry.PantryItems;
+namespace SmartPantry.Despensa;
 
 public class UpdateDespensaDto
 {

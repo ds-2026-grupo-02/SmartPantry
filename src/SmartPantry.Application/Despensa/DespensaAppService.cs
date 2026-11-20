@@ -9,19 +9,19 @@ using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Users;
 
-namespace SmartPantry.PantryItems;
+namespace SmartPantry.Despensa;
 
 [Authorize]
 public class DespensaAppService : ApplicationService, IDespensaAppService
 {
-    private readonly IRepository<PantryItem, Guid> _pantryItemRepository;
+    private readonly IRepository<ItemDespensa, Guid> _itemDespensaRepository;
     private readonly IRepository<Producto, Guid> _productoRepository;
 
     public DespensaAppService(
-        IRepository<PantryItem, Guid> pantryItemRepository,
+        IRepository<ItemDespensa, Guid> pantryItemRepository,
         IRepository<Producto, Guid> productoRepository)
     {
-        _pantryItemRepository = pantryItemRepository;
+        _itemDespensaRepository = pantryItemRepository;
         _productoRepository = productoRepository;
     }
 
@@ -29,8 +29,8 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
     {
         var currentUserId = CurrentUser.GetId();
 
-        var queryable = await _pantryItemRepository.GetQueryableAsync();
-        var userQuery = queryable.Where(x => x.UserId == currentUserId && !x.EsConsumido);
+        var queryable = await _itemDespensaRepository.GetQueryableAsync();
+        var userQuery = queryable.Where(x => x.UsuarioId == currentUserId && !x.EsConsumido);
 
         var totalCount = await AsyncExecuter.CountAsync(userQuery);
 
@@ -38,7 +38,7 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
             userQuery.Skip(input.SkipCount).Take(input.MaxResultCount)
         );
 
-        var dtos = items.Select(x => ObjectMapper.Map<PantryItem, DespensaDto>(x)).ToList();
+        var dtos = items.Select(x => ObjectMapper.Map<ItemDespensa, DespensaDto>(x)).ToList();
 
         // Completar los datos del producto asociado
         foreach (var dto in dtos)
@@ -62,16 +62,16 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
         // Validar que el producto exista (lanza EntityNotFoundException/404 si no existe)
         var producto = await _productoRepository.GetAsync(input.ProductoId);
 
-        var item = new PantryItem(
+        var item = new ItemDespensa(
             GuidGenerator.Create(),
             currentUserId,
             input.ProductoId,
             input.FechaVencimiento
         );
 
-        await _pantryItemRepository.InsertAsync(item);
+        await _itemDespensaRepository.InsertAsync(item);
 
-        var dto = ObjectMapper.Map<PantryItem, DespensaDto>(item);
+        var dto = ObjectMapper.Map<ItemDespensa, DespensaDto>(item);
         dto.NombreProductoEs = producto.NombreEs;
         dto.NombreProductoEn = producto.NombreEn;
         dto.CantidadProducto = producto.Cantidad;
@@ -82,11 +82,11 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
     {
         var item = await GetItemDelUsuarioOThrowAsync(id);
 
-        item.UpdateExpirationDate(input.FechaVencimiento);
+        item.ActualizarFechaVencimiento(input.FechaVencimiento);
 
-        await _pantryItemRepository.UpdateAsync(item);
+        await _itemDespensaRepository.UpdateAsync(item);
 
-        var dto = ObjectMapper.Map<PantryItem, DespensaDto>(item);
+        var dto = ObjectMapper.Map<ItemDespensa, DespensaDto>(item);
         var producto = await _productoRepository.FindAsync(dto.ProductoId);
         if (producto != null)
         {
@@ -101,22 +101,22 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
     {
         var item = await GetItemDelUsuarioOThrowAsync(id);
         item.MarcarComoConsumido();
-        await _pantryItemRepository.UpdateAsync(item);
+        await _itemDespensaRepository.UpdateAsync(item);
     }
 
     public async Task DeleteAsync(Guid id)
     {
         var item = await GetItemDelUsuarioOThrowAsync(id);
-        await _pantryItemRepository.DeleteAsync(item);
+        await _itemDespensaRepository.DeleteAsync(item);
     }
 
-    private async Task<PantryItem> GetItemDelUsuarioOThrowAsync(Guid id)
+    private async Task<ItemDespensa> GetItemDelUsuarioOThrowAsync(Guid id)
     {
-        var item = await _pantryItemRepository.FindAsync(id);
+        var item = await _itemDespensaRepository.FindAsync(id);
 
-        if (item == null || item.UserId != CurrentUser.GetId())
+        if (item == null || item.UsuarioId != CurrentUser.GetId())
         {
-            throw new EntityNotFoundException(typeof(PantryItem), id);
+            throw new EntityNotFoundException(typeof(ItemDespensa), id);
         }
 
         return item;
