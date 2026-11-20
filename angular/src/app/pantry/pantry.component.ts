@@ -1,10 +1,11 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ListService, LocalizationModule, LocalizationService } from '@abp/ng.core';
 import { ConfirmationService, Confirmation, ToasterService, ThemeSharedModule } from '@abp/ng.theme.shared';
-import { DespensaService } from '../proxy/pantry-items/despensa.service';
-import { DespensaDto } from '../proxy/pantry-items/models';
+import { DespensaService } from '../proxy/despensa/despensa.service';
+import { DespensaDto } from '../proxy/despensa/models';
 
 export function fechaValidaValidator(control: AbstractControl): ValidationErrors | null {
   const value = control.value;
@@ -62,6 +63,7 @@ export class PantryComponent implements OnInit {
   editingId: string | null = null;
   form!: FormGroup;
   fechaInputInvalid = false;
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor(
     public readonly list: ListService,
@@ -102,38 +104,45 @@ export class PantryComponent implements OnInit {
     this.isLoading = true;
     this.hasError = false;
 
-    this.list.isLoading$.subscribe(loading => {
-      this.isLoading = loading;
-      this.cdr.detectChanges();
-    });
+    this.list.isLoading$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(loading => {
+        this.isLoading = loading;
+        this.cdr.detectChanges();
+      });
 
-    this.list.requestStatus$.subscribe(status => {
-      if (status === 'error') {
-        this.hasError = true;
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      } else if (status === 'success') {
-        this.hasError = false;
-        this.cdr.detectChanges();
-      }
-    });
+    this.list.requestStatus$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(status => {
+        if (status === 'error') {
+          this.hasError = true;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        } else if (status === 'success') {
+          this.hasError = false;
+          this.cdr.detectChanges();
+        }
+      });
 
     const streamCreator = (query: any) =>
       this.despensaService.getList(query, { skipHandleError: true });
 
-    this.list.hookToQuery(streamCreator).subscribe({
-      next: (response) => {
-        this.items = response.items ?? [];
-        this.totalCount = response?.totalCount ?? 0;
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.hasError = true;
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      },
-    });
+    this.list
+      .hookToQuery(streamCreator)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.items = response.items ?? [];
+          this.totalCount = response?.totalCount ?? 0;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.hasError = true;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   loadItems() {
@@ -172,7 +181,6 @@ export class PantryComponent implements OnInit {
     this.isSaving = true;
     const formValue = {
       fechaVencimiento: this.form.value.fechaVencimiento || null,
-      cantidadProducto: null,
     };
 
     this.despensaService.update(this.editingId, formValue, { skipHandleError: true }).subscribe({

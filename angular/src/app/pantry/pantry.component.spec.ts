@@ -8,8 +8,8 @@ import { of, throwError } from 'rxjs';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 import { PantryComponent } from './pantry.component';
-import { DespensaService } from '../proxy/pantry-items/despensa.service';
-import { DespensaDto } from '../proxy/pantry-items/models';
+import { DespensaService } from '../proxy/despensa/despensa.service';
+import { DespensaDto } from '../proxy/despensa/models';
 
 describe('PantryComponent', () => {
   let component: PantryComponent;
@@ -38,7 +38,7 @@ describe('PantryComponent', () => {
   const sampleItems: DespensaDto[] = [
     {
       id: '11111111-1111-1111-1111-111111111111',
-      userId: 'user-1',
+      usuarioId: 'user-1',
       productoId: 'prod-1',
       nombreProductoEs: 'Arroz',
       nombreProductoEn: 'Rice',
@@ -48,7 +48,7 @@ describe('PantryComponent', () => {
     },
     {
       id: '22222222-2222-2222-2222-222222222222',
-      userId: 'user-1',
+      usuarioId: 'user-1',
       productoId: 'prod-2',
       nombreProductoEs: 'Fideos',
       nombreProductoEn: 'Pasta',
@@ -261,7 +261,7 @@ describe('PantryComponent', () => {
 
       expect(mockDespensaService.update).toHaveBeenCalledWith(
         sampleItems[0].id,
-        { fechaVencimiento: '2028-05-15', cantidadProducto: null },
+        { fechaVencimiento: '2028-05-15' },
         { skipHandleError: true }
       );
       expect(component.isModalOpen).toBe(false);
