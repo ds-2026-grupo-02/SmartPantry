@@ -27,12 +27,21 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
         _notaPrivadaRepository = notaPrivadaRepository;
     }
 
-    public async Task<PagedResultDto<DespensaDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+    public async Task<PagedResultDto<DespensaDto>> GetListAsync(GetDespensaListInput input)
     {
         var currentUserId = CurrentUser.GetId();
 
         var queryable = await _itemDespensaRepository.GetQueryableAsync();
-        var userQuery = queryable.Where(x => x.UsuarioId == currentUserId && !x.EsConsumido);
+        var userQuery = queryable.Where(x => x.UsuarioId == currentUserId);
+
+        if (input.SoloConsumidos == true)
+        {
+            userQuery = userQuery.Where(x => x.EsConsumido);
+        }
+        else
+        {
+            userQuery = userQuery.Where(x => !x.EsConsumido);
+        }
 
         var totalCount = await AsyncExecuter.CountAsync(userQuery);
 
