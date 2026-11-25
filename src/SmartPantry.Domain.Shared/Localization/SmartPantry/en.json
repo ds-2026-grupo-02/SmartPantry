@@ -3,6 +3,9 @@
   "Texts": {
     "AppName": "SmartPantry",
     "Menu:Home": "Home",
+    "Menu:Search": "Search",
+    "Menu:Preferences": "Preferences",
+    "Menu:Alerts": "Alerts",
     "Menu:ContactUs": "Contact Us",
     "Menu:ArticleSample": "Article Sample",
     "Home": "Home",

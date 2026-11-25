@@ -2,7 +2,10 @@
   "Culture": "es",
   "Texts": {
     "AppName": "SmartPantry",
-    "Menu:Home": "Hogar",
+    "Menu:Home": "Inicio",
+    "Menu:Search": "Búsqueda",
+    "Menu:Preferences": "Preferencias",
+    "Menu:Alerts": "Alertas",
     "Menu:ContactUs": "Contáctenos",
     "Menu:ArticleSample": "Muestra de artículo",
     "Home": "Hogar",
