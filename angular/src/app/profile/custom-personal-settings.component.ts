@@ -1,10 +1,11 @@
-import { Component, OnInit, inject, ChangeDetectorRef} from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { finalize } from 'rxjs/operators';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LocalizationPipe } from '@abp/ng.core';
 import { ToasterService } from '@abp/ng.theme.shared';
 import { PerfilService } from '../proxy/perfil/perfil.service';
+import { PerfilStateService } from './perfil-state.service';
 
 @Component({
   selector: 'app-custom-personal-settings',
@@ -60,6 +61,7 @@ import { PerfilService } from '../proxy/perfil/perfil.service';
               </label>
               <button
                 *ngIf="fotoPerfil"
+                type="button"
                 (click)="eliminarFoto()"
                 class="btn btn-sm btn-outline-danger"
                 [disabled]="isSavingPhoto"
@@ -109,6 +111,7 @@ import { PerfilService } from '../proxy/perfil/perfil.service';
 export class CustomPersonalSettingsComponent implements OnInit {
   private fb = inject(FormBuilder);
   private perfilService = inject(PerfilService);
+  private perfilState = inject(PerfilStateService);
   private toaster = inject(ToasterService);
   private cdr = inject(ChangeDetectorRef);
 
@@ -131,6 +134,7 @@ export class CustomPersonalSettingsComponent implements OnInit {
     this.perfilService.get().subscribe({
       next: (perfil) => {
         this.fotoPerfil = perfil.fotoPerfil || null;
+        this.perfilState.setFotoPerfil(this.fotoPerfil);
         this.form.patchValue({
           name: perfil.name,
           surname: perfil.surname,
@@ -173,6 +177,7 @@ export class CustomPersonalSettingsComponent implements OnInit {
           .subscribe({
             next: () => {
               this.fotoPerfil = base64;
+              this.perfilState.setFotoPerfil(base64);
               this.toaster.success('Foto de perfil actualizada correctamente.');
             },
             error: () => {
@@ -197,6 +202,7 @@ export class CustomPersonalSettingsComponent implements OnInit {
       .subscribe({
         next: () => {
           this.fotoPerfil = null;
+          this.perfilState.setFotoPerfil(null);
           this.toaster.success('Foto de perfil eliminada.');
         },
         error: () => {
