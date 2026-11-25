@@ -1,5 +1,6 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef} from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { finalize } from 'rxjs/operators';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LocalizationPipe } from '@abp/ng.core';
 import { ToasterService } from '@abp/ng.theme.shared';
@@ -109,6 +110,7 @@ export class CustomPersonalSettingsComponent implements OnInit {
   private fb = inject(FormBuilder);
   private perfilService = inject(PerfilService);
   private toaster = inject(ToasterService);
+  private cdr = inject(ChangeDetectorRef);
 
   fotoPerfil: string | null = null;
   isSavingPhoto = false;
@@ -135,6 +137,7 @@ export class CustomPersonalSettingsComponent implements OnInit {
           email: perfil.email,
           phoneNumber: perfil.phoneNumber,
         });
+        this.cdr.detectChanges();
       },
       error: () => {
         this.toaster.error('No se pudo cargar la información del perfil.');
@@ -159,17 +162,23 @@ export class CustomPersonalSettingsComponent implements OnInit {
       reader.onload = () => {
         const base64 = reader.result as string;
         this.isSavingPhoto = true;
-        this.perfilService.actualizarFoto({ fotoBase64: base64 }).subscribe({
-          next: () => {
-            this.fotoPerfil = base64;
-            this.isSavingPhoto = false;
-            this.toaster.success('Foto de perfil actualizada correctamente.');
-          },
-          error: () => {
-            this.isSavingPhoto = false;
-            this.toaster.error('Error al guardar la foto de perfil.');
-          },
-        });
+        this.perfilService
+          .actualizarFoto({ fotoBase64: base64 })
+          .pipe(
+            finalize(() => {
+              this.isSavingPhoto = false;
+              this.cdr.detectChanges();
+            })
+          )
+          .subscribe({
+            next: () => {
+              this.fotoPerfil = base64;
+              this.toaster.success('Foto de perfil actualizada correctamente.');
+            },
+            error: () => {
+              this.toaster.error('Error al guardar la foto de perfil.');
+            },
+          });
       };
       reader.readAsDataURL(file);
     }
@@ -177,39 +186,51 @@ export class CustomPersonalSettingsComponent implements OnInit {
 
   eliminarFoto(): void {
     this.isSavingPhoto = true;
-    this.perfilService.eliminarFoto().subscribe({
-      next: () => {
-        this.fotoPerfil = null;
-        this.isSavingPhoto = false;
-        this.toaster.success('Foto de perfil eliminada.');
-      },
-      error: () => {
-        this.isSavingPhoto = false;
-        this.toaster.error('Error al eliminar la foto.');
-      },
-    });
+    this.perfilService
+      .eliminarFoto()
+      .pipe(
+        finalize(() => {
+          this.isSavingPhoto = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.fotoPerfil = null;
+          this.toaster.success('Foto de perfil eliminada.');
+        },
+        error: () => {
+          this.toaster.error('Error al eliminar la foto.');
+        },
+      });
   }
 
   onSubmit(): void {
     if (this.form.invalid) return;
 
     this.isSaving = true;
-    this.perfilService.actualizarPerfil(this.form.value).subscribe({
-      next: (perfil) => {
-        this.isSaving = false;
-        this.form.patchValue({
-          name: perfil.name,
-          surname: perfil.surname,
-          email: perfil.email,
-          phoneNumber: perfil.phoneNumber,
-        });
-        this.toaster.success('Perfil actualizado correctamente.');
-      },
-      error: (err) => {
-        this.isSaving = false;
-        const msg = err.error?.error?.message || 'Error al actualizar el perfil.';
-        this.toaster.error(msg);
-      },
-    });
+    this.perfilService
+      .actualizarPerfil(this.form.value)
+      .pipe(
+        finalize(() => {
+          this.isSaving = false;
+          this.cdr.detectChanges();
+        })
+      )
+      .subscribe({
+        next: (perfil) => {
+          this.form.patchValue({
+            name: perfil.name,
+            surname: perfil.surname,
+            email: perfil.email,
+            phoneNumber: perfil.phoneNumber,
+          });
+          this.toaster.success('Perfil actualizado correctamente.');
+        },
+        error: (err) => {
+          const msg = err.error?.error?.message || 'Error al actualizar el perfil.';
+          this.toaster.error(msg);
+        },
+      });
   }
 }
