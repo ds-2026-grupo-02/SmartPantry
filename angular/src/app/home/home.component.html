@@ -8,33 +8,33 @@
         </div>
         <div>
           <h1 class="display-6 fw-bold mb-1 text-primary">SmartPantry</h1>
-          <p class="text-muted mb-0">Gestión inteligente de tu despensa y control de alimentos</p>
+          <p class="text-muted mb-0">{{ '::Home:HeroSubtitle' | abpLocalization }}</p>
         </div>
       </div>
 
       <p class="col-md-9 fs-5 text-secondary">
-        Consulta información de alimentos envasados, mantén tu despensa organizada y recibe advertencias de vencimiento para evitar el desperdicio.
+        {{ '::Home:HeroDescription' | abpLocalization }}
       </p>
 
       <!-- Si el usuario NO está autenticado (invitado) -->
       <div *ngIf="!hasLoggedIn" class="mt-4 p-3 bg-light rounded-3 border d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
         <div>
           <h5 class="mb-1 text-dark fw-semibold">
-            <i class="fas fa-user-lock me-2 text-warning"></i>Accede a todas las funcionalidades
+            <i class="fas fa-user-lock me-2 text-warning"></i>{{ '::Home:GuestBannerTitle' | abpLocalization }}
           </h5>
           <p class="mb-0 text-muted small">
-            Inicia sesión o crea tu cuenta para guardar productos en tu despensa personal, definir preferencias y activar avisos de caducidad.
+            {{ '::Home:GuestBannerDescription' | abpLocalization }}
           </p>
         </div>
         <button (click)="login()" class="btn btn-primary btn-lg px-4 text-nowrap shadow-sm">
-          <i class="fas fa-sign-in-alt me-2"></i>Iniciar sesión / Registrarse
+          <i class="fas fa-sign-in-alt me-2"></i>{{ '::Home:LoginOrRegister' | abpLocalization }}
         </button>
       </div>
 
       <!-- Si el usuario SÍ está autenticado -->
       <div *ngIf="hasLoggedIn" class="mt-3">
         <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-6">
-          <i class="fas fa-check-circle me-1"></i> Sesión activa — Explora tus módulos personales abajo
+          <i class="fas fa-check-circle me-1"></i> {{ '::Home:ActiveSessionBadge' | abpLocalization }}
         </span>
       </div>
     </div>
@@ -42,8 +42,10 @@
 
   <!-- Accesos directos / Módulos -->
   <div class="section-title mb-3">
-    <h4 class="fw-bold text-dark"><i class="fas fa-th-large me-2 text-primary"></i>Accesos directos</h4>
-    <p class="text-muted small">Navega a las diferentes herramientas de SmartPantry</p>
+    <h4 class="fw-bold text-dark">
+      <i class="fas fa-th-large me-2 text-primary"></i>{{ '::Home:QuickAccessTitle' | abpLocalization }}
+    </h4>
+    <p class="text-muted small">{{ '::Home:QuickAccessSubtitle' | abpLocalization }}</p>
   </div>
 
   <div class="row g-4">
@@ -54,12 +56,12 @@
           <div class="module-icon-wrapper bg-primary-subtle text-primary rounded-3 mb-3 d-flex align-items-center justify-content-center">
             <i class="fas fa-search fs-3"></i>
           </div>
-          <h5 class="card-title fw-bold">Búsqueda</h5>
+          <h5 class="card-title fw-bold">{{ '::Home:SearchTitle' | abpLocalization }}</h5>
           <p class="card-text text-muted small flex-grow-1">
-            Consulta información pública sobre alimentos envasados y códigos de barra.
+            {{ '::Home:SearchDescription' | abpLocalization }}
           </p>
           <a [routerLink]="['/search']" class="btn btn-outline-primary mt-3 w-100">
-            <i class="fas fa-barcode me-1"></i> Ir a Búsqueda
+            <i class="fas fa-barcode me-1"></i> {{ '::Home:SearchButton' | abpLocalization }}
           </a>
         </div>
       </div>
@@ -73,12 +75,12 @@
           <div class="module-icon-wrapper bg-success-subtle text-success rounded-3 mb-3 d-flex align-items-center justify-content-center">
             <i class="fas fa-shopping-basket fs-3"></i>
           </div>
-          <h5 class="card-title fw-bold">Mi Despensa</h5>
+          <h5 class="card-title fw-bold">{{ '::Home:PantryTitle' | abpLocalization }}</h5>
           <p class="card-text text-muted small flex-grow-1">
-            Administra tus existencias, cantidades y monitorea las fechas de caducidad.
+            {{ '::Home:PantryDescription' | abpLocalization }}
           </p>
           <a [routerLink]="['/pantry']" class="btn btn-outline-success mt-3 w-100">
-            <i class="fas fa-box-open me-1"></i> Ver mi despensa
+            <i class="fas fa-box-open me-1"></i> {{ '::Home:PantryButton' | abpLocalization }}
           </a>
         </div>
       </div>
@@ -91,12 +93,12 @@
           <div class="module-icon-wrapper bg-info-subtle text-info rounded-3 mb-3 d-flex align-items-center justify-content-center">
             <i class="fas fa-sliders-h fs-3"></i>
           </div>
-          <h5 class="card-title fw-bold">Preferencias</h5>
+          <h5 class="card-title fw-bold">{{ '::Home:PreferencesTitle' | abpLocalization }}</h5>
           <p class="card-text text-muted small flex-grow-1">
-            Configura restricciones dietarias, ingredientes no deseados o alérgenos.
+            {{ '::Home:PreferencesDescription' | abpLocalization }}
           </p>
           <a [routerLink]="['/preferences']" class="btn btn-outline-info mt-3 w-100">
-            <i class="fas fa-heart me-1"></i> Configurar
+            <i class="fas fa-heart me-1"></i> {{ '::Home:PreferencesButton' | abpLocalization }}
           </a>
         </div>
       </div>
@@ -109,12 +111,12 @@
           <div class="module-icon-wrapper bg-warning-subtle text-warning rounded-3 mb-3 d-flex align-items-center justify-content-center">
             <i class="fas fa-bell fs-3"></i>
           </div>
-          <h5 class="card-title fw-bold">Alertas</h5>
+          <h5 class="card-title fw-bold">{{ '::Home:AlertsTitle' | abpLocalization }}</h5>
           <p class="card-text text-muted small flex-grow-1">
-            Revisa productos próximos a caducar y avisos automáticos de consumo.
+            {{ '::Home:AlertsDescription' | abpLocalization }}
           </p>
           <a [routerLink]="['/alerts']" class="btn btn-outline-warning mt-3 w-100">
-            <i class="fas fa-exclamation-triangle me-1"></i> Ver avisos
+            <i class="fas fa-exclamation-triangle me-1"></i> {{ '::Home:AlertsButton' | abpLocalization }}
           </a>
         </div>
       </div>
@@ -127,12 +129,12 @@
           <div class="text-muted mb-2 fs-2">
             <i class="fas fa-lock"></i>
           </div>
-          <h5 class="text-secondary fw-semibold">Módulos Privados Protegidos</h5>
+          <h5 class="text-secondary fw-semibold">{{ '::Home:GuestProtectedTitle' | abpLocalization }}</h5>
           <p class="text-muted small mb-3 max-w-500">
-            Los módulos de <strong>Mi Despensa</strong>, <strong>Preferencias</strong> y <strong>Alertas</strong> requieren autenticación para proteger tu información personal.
+            {{ '::Home:GuestProtectedDescription' | abpLocalization }}
           </p>
           <button (click)="login()" class="btn btn-sm btn-outline-primary">
-            <i class="fas fa-user-plus me-1"></i> Acceder ahora
+            <i class="fas fa-user-plus me-1"></i> {{ '::Home:GuestProtectedButton' | abpLocalization }}
           </button>
         </div>
       </div>

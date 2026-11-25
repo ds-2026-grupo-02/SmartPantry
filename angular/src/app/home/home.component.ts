@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { AuthService } from '@abp/ng.core';
+import { AuthService, LocalizationPipe } from '@abp/ng.core';
 
 @Component({
   selector: 'app-home',
@@ -9,7 +9,7 @@ import { AuthService } from '@abp/ng.core';
   styleUrls: ['./home.component.scss'],
   changeDetection: ChangeDetectionStrategy.Default,
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, LocalizationPipe],
 })
 export class HomeComponent {
   protected authService = inject(AuthService);
