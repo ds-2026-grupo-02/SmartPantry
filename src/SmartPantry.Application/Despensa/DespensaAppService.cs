@@ -16,13 +16,15 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
 {
     private readonly IRepository<ItemDespensa, Guid> _itemDespensaRepository;
     private readonly IRepository<Producto, Guid> _productoRepository;
-
+    private readonly IRepository<NotaPrivadaDespensa, Guid> _notaPrivadaRepository;
     public DespensaAppService(
         IRepository<ItemDespensa, Guid> pantryItemRepository,
-        IRepository<Producto, Guid> productoRepository)
+        IRepository<Producto, Guid> productoRepository,
+        IRepository<NotaPrivadaDespensa, Guid> notaPrivadaRepository)
     {
         _itemDespensaRepository = pantryItemRepository;
         _productoRepository = productoRepository;
+        _notaPrivadaRepository = notaPrivadaRepository;
     }
 
     public async Task<PagedResultDto<DespensaDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -108,6 +110,72 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
     {
         var item = await GetItemDelUsuarioOThrowAsync(id);
         await _itemDespensaRepository.DeleteAsync(item);
+    }
+    public async Task<NotaPrivadaDto?> GetNotaPrivadaAsync(Guid itemId)
+    {
+        await GetItemDelUsuarioOThrowAsync(itemId);
+        var currentUserId = CurrentUser.GetId();
+
+        var nota = await _notaPrivadaRepository.FirstOrDefaultAsync(x =>
+            x.ItemDespensaId == itemId && x.UsuarioId == currentUserId);
+
+        if (nota == null)
+        {
+            return null;
+        }
+
+        return new NotaPrivadaDto
+        {
+            Id = nota.Id,
+            ItemDespensaId = nota.ItemDespensaId,
+            Contenido = nota.Contenido
+        };
+    }
+
+    public async Task<NotaPrivadaDto> GuardarNotaPrivadaAsync(Guid itemId, GuardarNotaPrivadaDto input)
+    {
+        await GetItemDelUsuarioOThrowAsync(itemId);
+        var currentUserId = CurrentUser.GetId();
+
+        var nota = await _notaPrivadaRepository.FirstOrDefaultAsync(x =>
+            x.ItemDespensaId == itemId && x.UsuarioId == currentUserId);
+
+        if (nota == null)
+        {
+            nota = new NotaPrivadaDespensa(
+                GuidGenerator.Create(),
+                itemId,
+                currentUserId,
+                input.Contenido
+            );
+            await _notaPrivadaRepository.InsertAsync(nota, autoSave: true);
+        }
+        else
+        {
+            nota.ActualizarContenido(input.Contenido);
+            await _notaPrivadaRepository.UpdateAsync(nota, autoSave: true);
+        }
+
+        return new NotaPrivadaDto
+        {
+            Id = nota.Id,
+            ItemDespensaId = nota.ItemDespensaId,
+            Contenido = nota.Contenido
+        };
+    }
+
+    public async Task EliminarNotaPrivadaAsync(Guid itemId)
+    {
+        await GetItemDelUsuarioOThrowAsync(itemId);
+        var currentUserId = CurrentUser.GetId();
+
+        var nota = await _notaPrivadaRepository.FirstOrDefaultAsync(x =>
+            x.ItemDespensaId == itemId && x.UsuarioId == currentUserId);
+
+        if (nota != null)
+        {
+            await _notaPrivadaRepository.DeleteAsync(nota, autoSave: true);
+        }
     }
 
     private async Task<ItemDespensa> GetItemDelUsuarioOThrowAsync(Guid id)

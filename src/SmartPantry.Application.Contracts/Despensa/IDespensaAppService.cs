@@ -12,4 +12,7 @@ public interface IDespensaAppService : IApplicationService
     Task<DespensaDto> UpdateAsync(Guid id, UpdateDespensaDto input);
     Task MarcarConsumidoAsync(Guid id);
     Task DeleteAsync(Guid id);
+    Task<NotaPrivadaDto?> GetNotaPrivadaAsync(Guid itemId);
+    Task<NotaPrivadaDto> GuardarNotaPrivadaAsync(Guid itemId, GuardarNotaPrivadaDto input);
+    Task EliminarNotaPrivadaAsync(Guid itemId);
 }

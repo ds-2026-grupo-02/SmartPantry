@@ -43,6 +43,7 @@ public class SmartPantryDbContext :
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
 
     /* Entidades Propias del Dominio */
+    public DbSet<NotaPrivadaDespensa> NotasPrivadasDespensa { get; set; }
     public DbSet<Producto> Productos { get; set; }
     public DbSet<ItemDespensa> ItemsDespensa { get; set; }
     public DbSet<AdvertenciaVencimiento> AdvertenciasVencimiento { get; set; }
@@ -69,6 +70,23 @@ public class SmartPantryDbContext :
         builder.ConfigureBlobStoring();
 
         /* Mapeo de Entidades */
+
+        //SmartPantry.Despensa ya está importado arriba,
+        //así que NotaPrivadaDespensa e ItemDespensa se resuelven directo).
+        builder.Entity<NotaPrivadaDespensa>(b =>
+        {
+            b.ToTable(SmartPantryConsts.DbTablePrefix + "NotasPrivadasDespensa", SmartPantryConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Contenido)
+             .IsRequired()
+             .HasMaxLength(NotaPrivadaDespensa.MaxContenidoLength);
+
+            b.HasOne<ItemDespensa>()
+             .WithMany()
+             .HasForeignKey(x => x.ItemDespensaId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
         builder.Entity<Producto>(b =>
         {
             b.ToTable(SmartPantryConsts.DbTablePrefix + "Productos", SmartPantryConsts.DbSchema);
