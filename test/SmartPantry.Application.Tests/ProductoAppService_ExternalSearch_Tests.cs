@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Shouldly;
-using SmartPantry.Productos;
+using SmartPantry.CatalogoExterno;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp;

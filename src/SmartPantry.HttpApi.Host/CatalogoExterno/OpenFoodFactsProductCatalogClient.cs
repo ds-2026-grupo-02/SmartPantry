@@ -1,3 +1,4 @@
+using SmartPantry.Productos;
 using System;
 using System.Net;
 using System.Net.Http;
@@ -6,7 +7,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Volo.Abp;
 
-namespace SmartPantry.Productos;
+namespace SmartPantry.CatalogoExterno;
 
 public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
 {

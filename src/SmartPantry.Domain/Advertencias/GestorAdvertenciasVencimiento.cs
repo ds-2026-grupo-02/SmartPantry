@@ -1,20 +1,20 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using SmartPantry.PantryItems;
+using SmartPantry.Despensa;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
-namespace SmartPantry.Warnings;
+namespace SmartPantry.Advertencias;
 
-public class ExpirationWarningManager : DomainService
+public class GestorAdvertenciasVencimiento : DomainService
 {
-    private readonly IRepository<PantryItem, Guid> _pantryItemRepository;
-    private readonly IRepository<ExpirationWarning, Guid> _expirationWarningRepository;
+    private readonly IRepository<ItemDespensa, Guid> _pantryItemRepository;
+    private readonly IRepository<AdvertenciaVencimiento, Guid> _expirationWarningRepository;
 
-    public ExpirationWarningManager(
-        IRepository<PantryItem, Guid> pantryItemRepository,
-        IRepository<ExpirationWarning, Guid> expirationWarningRepository)
+    public GestorAdvertenciasVencimiento(
+        IRepository<ItemDespensa, Guid> pantryItemRepository,
+        IRepository<AdvertenciaVencimiento, Guid> expirationWarningRepository)
     {
         _pantryItemRepository = pantryItemRepository;
         _expirationWarningRepository = expirationWarningRepository;
@@ -30,15 +30,15 @@ public class ExpirationWarningManager : DomainService
         {
             // Buscar la advertencia existente directamente de forma asíncrona
             var existingWarning = await _expirationWarningRepository.FirstOrDefaultAsync(
-                x => x.PantryItemId == item.Id && x.WarningType == warningType
+                x => x.ItemDespensaId == item.Id && x.TipoAdvertencia == warningType
             );
 
             // 2. Si el ítem está consumido o no tiene fecha de vencimiento definida, no debe tener advertencia activa
             if (item.EsConsumido || !item.FechaVencimiento.HasValue)
             {
-                if (existingWarning != null && existingWarning.IsActive)
+                if (existingWarning != null && existingWarning.EsActiva)
                 {
-                    existingWarning.Deactivate();
+                    existingWarning.Desactivar();
                     await _expirationWarningRepository.UpdateAsync(existingWarning, autoSave: true);
                 }
                 continue;
@@ -52,27 +52,27 @@ public class ExpirationWarningManager : DomainService
             {
                 if (existingWarning == null)
                 {
-                    var newWarning = new ExpirationWarning(
+                    var newWarning = new AdvertenciaVencimiento(
                         GuidGenerator.Create(),
-                        item.UserId,
+                        item.UsuarioId,
                         item.Id,
                         warningType,
                         item.FechaVencimiento
                     );
                     await _expirationWarningRepository.InsertAsync(newWarning, autoSave: true);
                 }
-                else if (!existingWarning.IsActive || existingWarning.ExpirationDate != item.FechaVencimiento)
+                else if (!existingWarning.EsActiva || existingWarning.FechaVencimiento != item.FechaVencimiento)
                 {
-                    existingWarning.Reactivate(item.FechaVencimiento);
+                    existingWarning.Reactivar(item.FechaVencimiento);
                     await _expirationWarningRepository.UpdateAsync(existingWarning, autoSave: true);
                 }
             }
             else
             {
                 // 4. Si ya no está dentro del umbral (ej. vencido < 0 o fecha lejana > thresholdDays)
-                if (existingWarning != null && existingWarning.IsActive)
+                if (existingWarning != null && existingWarning.EsActiva)
                 {
-                    existingWarning.Deactivate();
+                    existingWarning.Desactivar();
                     await _expirationWarningRepository.UpdateAsync(existingWarning, autoSave: true);
                 }
             }

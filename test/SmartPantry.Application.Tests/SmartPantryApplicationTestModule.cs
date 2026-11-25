@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
-using SmartPantry.Productos;
+using SmartPantry.CatalogoExterno;
 using Volo.Abp.Modularity;
 
 namespace SmartPantry;
