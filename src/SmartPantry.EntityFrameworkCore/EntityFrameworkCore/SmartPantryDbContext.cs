@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SmartPantry.Despensa;
 using SmartPantry.Productos;
 using SmartPantry.Advertencias; // Importante para ExpirationWarning
+using SmartPantry.Preferencias;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.BlobStoring.Database.EntityFrameworkCore;
@@ -46,6 +47,7 @@ public class SmartPantryDbContext :
     public DbSet<Producto> Productos { get; set; }
     public DbSet<ItemDespensa> ItemsDespensa { get; set; }
     public DbSet<AdvertenciaVencimiento> AdvertenciasVencimiento { get; set; }
+    public DbSet<PreferenciaUsuario> PreferenciasUsuario { get; set; }
 
     public SmartPantryDbContext(DbContextOptions<SmartPantryDbContext> options)
         : base(options)
@@ -106,6 +108,54 @@ public class SmartPantryDbContext :
             // Índice único compuesto para asegurar la idempotencia requerida en el TP08
             b.HasIndex(x => new { x.ItemDespensaId, x.TipoAdvertencia })
              .IsUnique();
+        });
+
+        builder.Entity<PreferenciaUsuario>(b =>
+        {
+            b.ToTable(SmartPantryConsts.DbTablePrefix + "PreferenciasUsuario", SmartPantryConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.HasIndex(x => x.UsuarioId)
+             .IsUnique();
+
+            b.Property(x => x.MostrarAlertas)
+             .IsRequired();
+
+            b.OwnsMany(x => x.Alergenos, ab =>
+            {
+                ab.ToTable(SmartPantryConsts.DbTablePrefix + "PreferenciasAlergenos", SmartPantryConsts.DbSchema);
+
+                ab.WithOwner()
+                  .HasForeignKey("PreferenciaUsuarioId");
+
+                ab.Property(a => a.Nombre)
+                  .IsRequired()
+                  .HasMaxLength(PreferenciaUsuarioConsts.MaxNombreLength);
+
+                ab.HasIndex("PreferenciaUsuarioId", nameof(AlergenoVigilar.Nombre))
+                  .IsUnique();
+            });
+
+            b.OwnsMany(x => x.Ingredientes, ib =>
+            {
+                ib.ToTable(SmartPantryConsts.DbTablePrefix + "PreferenciasIngredientes", SmartPantryConsts.DbSchema);
+
+                ib.WithOwner()
+                  .HasForeignKey("PreferenciaUsuarioId");
+
+                ib.Property(i => i.Nombre)
+                  .IsRequired()
+                  .HasMaxLength(PreferenciaUsuarioConsts.MaxNombreLength);
+
+                ib.HasIndex("PreferenciaUsuarioId", nameof(IngredienteVigilar.Nombre))
+                  .IsUnique();
+            });
+
+            b.Navigation(x => x.Alergenos)
+             .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+            b.Navigation(x => x.Ingredientes)
+             .UsePropertyAccessMode(PropertyAccessMode.Field);
         });
     }
 }
