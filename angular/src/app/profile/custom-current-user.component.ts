@@ -43,15 +43,6 @@ import { PerfilStateService } from './perfil-state.service';
           </button>
         </div>
       </div>
-
-      <button
-        *ngIf="!user.isAuthenticated"
-        type="button"
-        class="btn btn-sm btn-primary"
-        (click)="login()"
-      >
-        {{ 'AbpAccount::Login' | abpLocalization }}
-      </button>
     </ng-container>
   `,
 })
