@@ -39,7 +39,7 @@ public class GestorAdvertenciasVencimiento_Tests : SmartPantryEntityFrameworkCor
         await WithUnitOfWorkAsync(async () => await _itemDespensaRepository.InsertAsync(item));
 
         await WithUnitOfWorkAsync(async () =>
-            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, thresholdDays: 3));
+            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, new UmbralVencimiento(3)));
 
         await WithUnitOfWorkAsync(async () =>
         {
@@ -76,7 +76,7 @@ public class GestorAdvertenciasVencimiento_Tests : SmartPantryEntityFrameworkCor
         });
 
         await WithUnitOfWorkAsync(async () =>
-            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, thresholdDays: 3));
+            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, new UmbralVencimiento(3)));
 
         await WithUnitOfWorkAsync(async () =>
         {
@@ -100,11 +100,11 @@ public class GestorAdvertenciasVencimiento_Tests : SmartPantryEntityFrameworkCor
 
         // Corrida 1
         await WithUnitOfWorkAsync(async () =>
-            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, thresholdDays: 3));
+            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, new UmbralVencimiento(3)));
 
         // Corrida 2 (Ejecución repetida)
         await WithUnitOfWorkAsync(async () =>
-            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, thresholdDays: 3));
+            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, new UmbralVencimiento(3)));
 
         await WithUnitOfWorkAsync(async () =>
         {
@@ -126,7 +126,8 @@ public class GestorAdvertenciasVencimiento_Tests : SmartPantryEntityFrameworkCor
         await WithUnitOfWorkAsync(async () => await _itemDespensaRepository.InsertAsync(item));
 
         // 1. Generar advertencia inicial
-        await WithUnitOfWorkAsync(async () => await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, thresholdDays: 3));
+        await WithUnitOfWorkAsync(async () =>
+            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, new UmbralVencimiento(3)));
 
         // 2. Cambiar la fecha de vencimiento del ítem (sigue dentro del umbral)
         await WithUnitOfWorkAsync(async () =>
@@ -137,7 +138,8 @@ public class GestorAdvertenciasVencimiento_Tests : SmartPantryEntityFrameworkCor
         });
 
         // 3. Procesar nuevamente
-        await WithUnitOfWorkAsync(async () => await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, thresholdDays: 3));
+        await WithUnitOfWorkAsync(async () =>
+            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, new UmbralVencimiento(3)));
 
         // 4. Comprobar que la advertencia actualizó su fecha y sigue siendo única
         await WithUnitOfWorkAsync(async () =>
@@ -159,7 +161,8 @@ public class GestorAdvertenciasVencimiento_Tests : SmartPantryEntityFrameworkCor
         // 1. Ítem activo dentro del umbral -> Genera advertencia
         var item = new ItemDespensa(itemId, Guid.NewGuid(), Guid.NewGuid(), fechaReferenciaUtc.AddDays(2));
         await WithUnitOfWorkAsync(async () => await _itemDespensaRepository.InsertAsync(item));
-        await WithUnitOfWorkAsync(async () => await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, thresholdDays: 3));
+        await WithUnitOfWorkAsync(async () =>
+            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, new UmbralVencimiento(3)));
 
         // Verificamos que la advertencia esté activa
         await WithUnitOfWorkAsync(async () =>
@@ -176,7 +179,8 @@ public class GestorAdvertenciasVencimiento_Tests : SmartPantryEntityFrameworkCor
             dbItem.MarcarComoConsumido();
             await _itemDespensaRepository.UpdateAsync(dbItem);
         });
-        await WithUnitOfWorkAsync(async () => await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, thresholdDays: 3));
+        await WithUnitOfWorkAsync(async () =>
+            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, new UmbralVencimiento(3)));
 
         // 3. Comprobamos que la advertencia fue desactivada
         await WithUnitOfWorkAsync(async () =>
@@ -201,7 +205,7 @@ public class GestorAdvertenciasVencimiento_Tests : SmartPantryEntityFrameworkCor
 
         // 1. Generar advertencia inicial
         await WithUnitOfWorkAsync(async () =>
-            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, thresholdDays: 3));
+            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, new UmbralVencimiento(3)));
 
         // 2. Quitamos la fecha de vencimiento (ítem sin fecha: null)
         await WithUnitOfWorkAsync(async () =>
@@ -213,7 +217,7 @@ public class GestorAdvertenciasVencimiento_Tests : SmartPantryEntityFrameworkCor
 
         // 3. Procesar nuevamente
         await WithUnitOfWorkAsync(async () =>
-            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, thresholdDays: 3));
+            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, new UmbralVencimiento(3)));
 
         // 4. Comprobamos que la advertencia se desactiva
         await WithUnitOfWorkAsync(async () =>
@@ -234,7 +238,8 @@ public class GestorAdvertenciasVencimiento_Tests : SmartPantryEntityFrameworkCor
         // Paso 1: Ítem próximo a vencer (+1 día) -> Se genera advertencia activa
         var item = new ItemDespensa(itemId, Guid.NewGuid(), Guid.NewGuid(), fechaReferenciaUtc.AddDays(1));
         await WithUnitOfWorkAsync(async () => await _itemDespensaRepository.InsertAsync(item));
-        await WithUnitOfWorkAsync(async () => await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, thresholdDays: 3));
+        await WithUnitOfWorkAsync(async () =>
+            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, new UmbralVencimiento(3)));
 
         await WithUnitOfWorkAsync(async () =>
         {
@@ -250,7 +255,8 @@ public class GestorAdvertenciasVencimiento_Tests : SmartPantryEntityFrameworkCor
             dbItem.ActualizarFechaVencimiento(fechaReferenciaUtc.AddDays(20));
             await _itemDespensaRepository.UpdateAsync(dbItem);
         });
-        await WithUnitOfWorkAsync(async () => await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, thresholdDays: 3));
+        await WithUnitOfWorkAsync(async () =>
+            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, new UmbralVencimiento(3)));
 
         await WithUnitOfWorkAsync(async () =>
         {
@@ -267,7 +273,8 @@ public class GestorAdvertenciasVencimiento_Tests : SmartPantryEntityFrameworkCor
             dbItem.ActualizarFechaVencimiento(fechaReactivacion);
             await _itemDespensaRepository.UpdateAsync(dbItem);
         });
-        await WithUnitOfWorkAsync(async () => await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, thresholdDays: 3));
+        await WithUnitOfWorkAsync(async () =>
+            await _gestorAdvertencias.ProcessExpirationsAsync(fechaReferenciaUtc, new UmbralVencimiento(3)));
 
         // Paso 4: Verificamos que se reactivó y que no se duplicó el registro en la base
         await WithUnitOfWorkAsync(async () =>

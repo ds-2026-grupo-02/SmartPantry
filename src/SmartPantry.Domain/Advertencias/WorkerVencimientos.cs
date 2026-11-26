@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Threading;
+using Volo.Abp.Timing;
 using Volo.Abp.Uow;
 
 namespace SmartPantry.Advertencias;
@@ -27,9 +28,13 @@ public class WorkerVencimientos : AsyncPeriodicBackgroundWorkerBase
         try
         {
             // Resolver el servicio de dominio desde el alcance de la ejecución (Scope)
+            var clock = workerContext.ServiceProvider.GetRequiredService<IClock>();
             var warningManager = workerContext.ServiceProvider.GetRequiredService<GestorAdvertenciasVencimiento>();
 
-            await warningManager.ProcessExpirationsAsync(DateTime.UtcNow);
+            await warningManager.ProcessExpirationsAsync(
+                referenceDate: clock.Now,
+                umbral: UmbralVencimiento.PorDefecto()
+            );
 
             Logger.LogInformation("Procesamiento de vencimientos finalizado exitosamente.");
         }
