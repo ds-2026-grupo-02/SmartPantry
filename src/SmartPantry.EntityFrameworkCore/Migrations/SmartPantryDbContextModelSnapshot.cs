@@ -84,6 +84,35 @@ namespace SmartPantry.Migrations
                     b.ToTable("AppAdvertenciasVencimiento", (string)null);
                 });
 
+            modelBuilder.Entity("SmartPantry.CatalogoExterno.RegistroLlamadaExterna", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("CodigoHttp")
+                        .HasColumnType("int");
+
+                    b.Property<long>("DuracionMs")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("FechaHoraUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Resultado")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TipoOperacion")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FechaHoraUtc");
+
+                    b.HasIndex("FechaHoraUtc", "Resultado");
+
+                    b.ToTable("AppRegistrosLlamadasExternas", (string)null);
+                });
+
             modelBuilder.Entity("SmartPantry.Despensa.ItemDespensa", b =>
                 {
                     b.Property<Guid>("Id")

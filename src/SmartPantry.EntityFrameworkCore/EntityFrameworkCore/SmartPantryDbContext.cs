@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SmartPantry.Despensa;
 using SmartPantry.Productos;
 using SmartPantry.Advertencias; // Importante para ExpirationWarning
+using SmartPantry.CatalogoExterno;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.BlobStoring.Database.EntityFrameworkCore;
@@ -46,6 +47,7 @@ public class SmartPantryDbContext :
     public DbSet<NotaPrivadaDespensa> NotasPrivadasDespensa { get; set; }
     public DbSet<Producto> Productos { get; set; }
     public DbSet<ItemDespensa> ItemsDespensa { get; set; }
+    public DbSet<RegistroLlamadaExterna> RegistrosLlamadasExternas { get; set; }
     public DbSet<AdvertenciaVencimiento> AdvertenciasVencimiento { get; set; }
 
     public SmartPantryDbContext(DbContextOptions<SmartPantryDbContext> options)
@@ -145,6 +147,27 @@ public class SmartPantryDbContext :
             // Índice único compuesto para asegurar la idempotencia requerida en el TP08
             b.HasIndex(x => new { x.ItemDespensaId, x.TipoAdvertencia })
              .IsUnique();
+        });
+
+        builder.Entity<RegistroLlamadaExterna>(b =>
+        {
+            b.ToTable(SmartPantryConsts.DbTablePrefix + "RegistrosLlamadasExternas", SmartPantryConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.TipoOperacion)
+             .IsRequired();
+
+            b.Property(x => x.FechaHoraUtc)
+             .IsRequired();
+
+            b.Property(x => x.DuracionMs)
+             .IsRequired();
+
+            b.Property(x => x.Resultado)
+             .IsRequired();
+
+            b.HasIndex(x => x.FechaHoraUtc);
+            b.HasIndex(x => new { x.FechaHoraUtc, x.Resultado });
         });
     }
 }
