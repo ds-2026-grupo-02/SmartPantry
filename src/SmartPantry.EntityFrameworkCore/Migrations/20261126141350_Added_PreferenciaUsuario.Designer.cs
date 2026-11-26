@@ -13,8 +13,8 @@ using Volo.Abp.EntityFrameworkCore;
 namespace SmartPantry.Migrations
 {
     [DbContext(typeof(SmartPantryDbContext))]
-    [Migration("20261126143235_AgregadaTablaRegistrosLlamadasExternas")]
-    partial class AgregadaTablaRegistrosLlamadasExternas
+    [Migration("20261126141350_Added_PreferenciaUsuario")]
+    partial class Added_PreferenciaUsuario
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -85,35 +85,6 @@ namespace SmartPantry.Migrations
                         .IsUnique();
 
                     b.ToTable("AppAdvertenciasVencimiento", (string)null);
-                });
-
-            modelBuilder.Entity("SmartPantry.CatalogoExterno.RegistroLlamadaExterna", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int?>("CodigoHttp")
-                        .HasColumnType("int");
-
-                    b.Property<long>("DuracionMs")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("FechaHoraUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Resultado")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TipoOperacion")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FechaHoraUtc");
-
-                    b.HasIndex("FechaHoraUtc", "Resultado");
-
-                    b.ToTable("AppRegistrosLlamadasExternas", (string)null);
                 });
 
             modelBuilder.Entity("SmartPantry.Despensa.ItemDespensa", b =>
@@ -233,22 +204,45 @@ namespace SmartPantry.Migrations
                     b.ToTable("AppNotasPrivadasDespensa", (string)null);
                 });
 
+            modelBuilder.Entity("SmartPantry.Preferencias.PreferenciaUsuario", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("MostrarAlertas")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId")
+                        .IsUnique();
+
+                    b.ToTable("AppPreferenciasUsuario", (string)null);
+                });
+
             modelBuilder.Entity("SmartPantry.Productos.Producto", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Alergenos")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
-
                     b.Property<string>("Cantidad")
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
-
-                    b.Property<string>("Categorias")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
 
                     b.Property<string>("CodigoBarras")
                         .IsRequired()
@@ -267,18 +261,6 @@ namespace SmartPantry.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
 
-                    b.Property<string>("ImagenUrl")
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)");
-
-                    b.Property<string>("Ingredientes")
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
-                    b.Property<string>("Marca")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
                     b.Property<string>("NombreEn")
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
@@ -287,17 +269,7 @@ namespace SmartPantry.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
-                    b.Property<int?>("Nova")
-                        .HasColumnType("int");
-
-                    b.Property<string>("NutriScore")
-                        .HasMaxLength(1)
-                        .HasColumnType("nvarchar(1)");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("CodigoBarras")
-                        .IsUnique();
 
                     b.ToTable("AppProductos", (string)null);
                 });
@@ -2274,6 +2246,67 @@ namespace SmartPantry.Migrations
                         .HasForeignKey("ItemDespensaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("SmartPantry.Preferencias.PreferenciaUsuario", b =>
+                {
+                    b.OwnsMany("SmartPantry.Preferencias.AlergenoVigilar", "Alergenos", b1 =>
+                        {
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            SqlServerPropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("Id"));
+
+                            b1.Property<string>("Nombre")
+                                .IsRequired()
+                                .HasMaxLength(64)
+                                .HasColumnType("nvarchar(64)");
+
+                            b1.Property<Guid>("PreferenciaUsuarioId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("PreferenciaUsuarioId", "Nombre")
+                                .IsUnique();
+
+                            b1.ToTable("AppPreferenciasAlergenos", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("PreferenciaUsuarioId");
+                        });
+
+                    b.OwnsMany("SmartPantry.Preferencias.IngredienteVigilar", "Ingredientes", b1 =>
+                        {
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            SqlServerPropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("Id"));
+
+                            b1.Property<string>("Nombre")
+                                .IsRequired()
+                                .HasMaxLength(64)
+                                .HasColumnType("nvarchar(64)");
+
+                            b1.Property<Guid>("PreferenciaUsuarioId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("PreferenciaUsuarioId", "Nombre")
+                                .IsUnique();
+
+                            b1.ToTable("AppPreferenciasIngredientes", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("PreferenciaUsuarioId");
+                        });
+
+                    b.Navigation("Alergenos");
+
+                    b.Navigation("Ingredientes");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLogAction", b =>

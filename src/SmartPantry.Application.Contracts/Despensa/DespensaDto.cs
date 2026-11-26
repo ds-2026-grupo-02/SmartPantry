@@ -12,4 +12,5 @@ public class DespensaDto : EntityDto<Guid>
     public string? CantidadProducto { get; set; }
     public DateTime? FechaVencimiento { get; set; }
     public bool EsConsumido { get; set; }
+    public EstadoVencimiento EstadoVencimiento { get; set; }
 }

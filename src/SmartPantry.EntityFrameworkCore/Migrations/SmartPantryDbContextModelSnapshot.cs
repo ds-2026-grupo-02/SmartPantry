@@ -106,9 +106,9 @@ namespace SmartPantry.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FechaHoraUtc");
-
                     b.HasIndex("FechaHoraUtc", "Resultado");
+
+                    b.HasIndex("FechaHoraUtc", "TipoOperacion");
 
                     b.ToTable("AppRegistrosLlamadasExternas", (string)null);
                 });
@@ -228,6 +228,37 @@ namespace SmartPantry.Migrations
                     b.HasIndex("ItemDespensaId");
 
                     b.ToTable("AppNotasPrivadasDespensa", (string)null);
+                });
+
+            modelBuilder.Entity("SmartPantry.Preferencias.PreferenciaUsuario", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("MostrarAlertas")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId")
+                        .IsUnique();
+
+                    b.ToTable("AppPreferenciasUsuario", (string)null);
                 });
 
             modelBuilder.Entity("SmartPantry.Productos.Producto", b =>
@@ -2271,6 +2302,67 @@ namespace SmartPantry.Migrations
                         .HasForeignKey("ItemDespensaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("SmartPantry.Preferencias.PreferenciaUsuario", b =>
+                {
+                    b.OwnsMany("SmartPantry.Preferencias.AlergenoVigilar", "Alergenos", b1 =>
+                        {
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            SqlServerPropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("Id"));
+
+                            b1.Property<string>("Nombre")
+                                .IsRequired()
+                                .HasMaxLength(64)
+                                .HasColumnType("nvarchar(64)");
+
+                            b1.Property<Guid>("PreferenciaUsuarioId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("PreferenciaUsuarioId", "Nombre")
+                                .IsUnique();
+
+                            b1.ToTable("AppPreferenciasAlergenos", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("PreferenciaUsuarioId");
+                        });
+
+                    b.OwnsMany("SmartPantry.Preferencias.IngredienteVigilar", "Ingredientes", b1 =>
+                        {
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            SqlServerPropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("Id"));
+
+                            b1.Property<string>("Nombre")
+                                .IsRequired()
+                                .HasMaxLength(64)
+                                .HasColumnType("nvarchar(64)");
+
+                            b1.Property<Guid>("PreferenciaUsuarioId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.HasKey("Id");
+
+                            b1.HasIndex("PreferenciaUsuarioId", "Nombre")
+                                .IsUnique();
+
+                            b1.ToTable("AppPreferenciasIngredientes", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("PreferenciaUsuarioId");
+                        });
+
+                    b.Navigation("Alergenos");
+
+                    b.Navigation("Ingredientes");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLogAction", b =>

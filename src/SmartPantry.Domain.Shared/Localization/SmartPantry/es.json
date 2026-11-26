@@ -110,6 +110,10 @@
     "Pantry:Error:ConnectionTitle": "Error de conexión",
     "Pantry:ConsumeConfirmation": "¿Marcar elemento como consumido?",
     "Pantry:WithoutName": "Sin nombre",
+    "SmartPantry:00001": "No puede estar vacío el nombre",
+    "SmartPantry:00002": "El nombre no puede superar {Maximo} caracteres",
+    "SmartPantry:00003": "\"{Nombre}\" ya está en la lista",
+    "SmartPantry:00004": "La lista no puede tener más de {Maximo} elementos",
     "SmartPantry:ProductoCodigoBarrasDuplicado": "Ya existe un producto registrado con el código de barras '{CodigoBarras}'."
   }
 }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using SmartPantry.Advertencias;
 using SmartPantry.Productos;
 using System;
 using System.Linq;
@@ -61,6 +62,8 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
                 dto.NombreProductoEn = producto.NombreEn;
                 dto.CantidadProducto = producto.Cantidad;
             }
+
+            dto.EstadoVencimiento = CalcularEstadoVencimiento(dto.FechaVencimiento);
         }
 
         return new PagedResultDto<DespensaDto>(totalCount, dtos);
@@ -86,6 +89,7 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
         dto.NombreProductoEs = producto.NombreEs;
         dto.NombreProductoEn = producto.NombreEn;
         dto.CantidadProducto = producto.Cantidad;
+        dto.EstadoVencimiento = CalcularEstadoVencimiento(dto.FechaVencimiento);
         return dto;
     }
 
@@ -105,6 +109,7 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
             dto.NombreProductoEn = producto.NombreEn;
             dto.CantidadProducto = producto.Cantidad;
         }
+        dto.EstadoVencimiento = CalcularEstadoVencimiento(dto.FechaVencimiento);
         return dto;
     }
 
@@ -185,6 +190,30 @@ public class DespensaAppService : ApplicationService, IDespensaAppService
         {
             await _notaPrivadaRepository.DeleteAsync(nota, autoSave: true);
         }
+    }
+
+    private EstadoVencimiento CalcularEstadoVencimiento(DateTime? fechaVencimiento)
+    {
+        if (!fechaVencimiento.HasValue)
+        {
+            return EstadoVencimiento.SinFecha;
+        }
+
+        var hoy = Clock.Now.Date;
+        var vencimiento = fechaVencimiento.Value.Date;
+        var diasRestantes = (vencimiento - hoy).Days;
+
+        if (diasRestantes < 0)
+        {
+            return EstadoVencimiento.Vencido;
+        }
+
+        if (diasRestantes <= UmbralVencimiento.DiasPorDefecto)
+        {
+            return EstadoVencimiento.ProximoAVencer;
+        }
+
+        return EstadoVencimiento.Vigente;
     }
 
     private async Task<ItemDespensa> GetItemDelUsuarioOThrowAsync(Guid id)
