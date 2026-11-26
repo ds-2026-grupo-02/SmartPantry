@@ -2187,9 +2187,6 @@ namespace SmartPantry.Migrations
                 {
                     b.OwnsMany("SmartPantry.Preferencias.AlergenoVigilar", "Alergenos", b1 =>
                         {
-                            b1.Property<Guid>("PreferenciaUsuarioId")
-                                .HasColumnType("uniqueidentifier");
-
                             b1.Property<int>("Id")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("int");
@@ -2201,7 +2198,10 @@ namespace SmartPantry.Migrations
                                 .HasMaxLength(64)
                                 .HasColumnType("nvarchar(64)");
 
-                            b1.HasKey("PreferenciaUsuarioId", "Id");
+                            b1.Property<Guid>("PreferenciaUsuarioId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.HasKey("Id");
 
                             b1.HasIndex("PreferenciaUsuarioId", "Nombre")
                                 .IsUnique();
@@ -2214,9 +2214,6 @@ namespace SmartPantry.Migrations
 
                     b.OwnsMany("SmartPantry.Preferencias.IngredienteVigilar", "Ingredientes", b1 =>
                         {
-                            b1.Property<Guid>("PreferenciaUsuarioId")
-                                .HasColumnType("uniqueidentifier");
-
                             b1.Property<int>("Id")
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("int");
@@ -2228,7 +2225,10 @@ namespace SmartPantry.Migrations
                                 .HasMaxLength(64)
                                 .HasColumnType("nvarchar(64)");
 
-                            b1.HasKey("PreferenciaUsuarioId", "Id");
+                            b1.Property<Guid>("PreferenciaUsuarioId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.HasKey("Id");
 
                             b1.HasIndex("PreferenciaUsuarioId", "Nombre")
                                 .IsUnique();

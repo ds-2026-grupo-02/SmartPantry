@@ -128,6 +128,9 @@ public class SmartPantryDbContext :
                 ab.WithOwner()
                   .HasForeignKey("PreferenciaUsuarioId");
 
+                ab.Property<int>("Id").ValueGeneratedOnAdd();
+                ab.HasKey("Id");
+
                 ab.Property(a => a.Nombre)
                   .IsRequired()
                   .HasMaxLength(PreferenciaUsuarioConsts.MaxNombreLength);
@@ -142,6 +145,9 @@ public class SmartPantryDbContext :
 
                 ib.WithOwner()
                   .HasForeignKey("PreferenciaUsuarioId");
+
+                ib.Property<int>("Id").ValueGeneratedOnAdd();
+                ib.HasKey("Id");
 
                 ib.Property(i => i.Nombre)
                   .IsRequired()
