@@ -7,9 +7,12 @@ namespace SmartPantry.Despensa;
 
 public interface IDespensaAppService : IApplicationService
 {
-    Task<PagedResultDto<DespensaDto>> GetListAsync(PagedAndSortedResultRequestDto input);
+    Task<PagedResultDto<DespensaDto>> GetListAsync(GetDespensaListInput input);
     Task<DespensaDto> CreateAsync(CreateDespensaDto input);
     Task<DespensaDto> UpdateAsync(Guid id, UpdateDespensaDto input);
     Task MarcarConsumidoAsync(Guid id);
     Task DeleteAsync(Guid id);
+    Task<NotaPrivadaDto?> GetNotaPrivadaAsync(Guid itemId);
+    Task<NotaPrivadaDto> GuardarNotaPrivadaAsync(Guid itemId, GuardarNotaPrivadaDto input);
+    Task EliminarNotaPrivadaAsync(Guid itemId);
 }
