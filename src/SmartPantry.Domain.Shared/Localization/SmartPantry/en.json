@@ -106,6 +106,7 @@
     "Pantry:Error:DeleteFailed": "Could not delete item. Please check server connection.",
     "Pantry:Error:ConnectionTitle": "Connection Error",
     "Pantry:ConsumeConfirmation": "Mark pantry item as consumed?",
-    "Pantry:WithoutName": "No name"
+    "Pantry:WithoutName": "No name",
+    "SmartPantry:ProductoCodigoBarrasDuplicado": "A product with barcode '{CodigoBarras}' already exists."
   }
 }
