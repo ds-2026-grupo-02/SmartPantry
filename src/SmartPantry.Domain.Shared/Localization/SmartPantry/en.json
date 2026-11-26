@@ -107,6 +107,10 @@
     "Pantry:Error:ConnectionTitle": "Connection Error",
     "Pantry:ConsumeConfirmation": "Mark pantry item as consumed?",
     "Pantry:WithoutName": "No name",
+    "SmartPantry:00001": "The name cannot be empty",
+    "SmartPantry:00002": "The name cannot exceed {Maximo} characters",
+    "SmartPantry:00003": "\"{Nombre}\" is already in the list",
+    "SmartPantry:00004": "The list cannot contain more than {Maximo} items",
     "SmartPantry:ProductoCodigoBarrasDuplicado": "A product with barcode '{CodigoBarras}' already exists."
   }
 }
