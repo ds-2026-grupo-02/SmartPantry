@@ -5,6 +5,13 @@ export interface CreateUpdateProductoDto {
   nombreEn?: string | null;
   cantidad?: string | null;
   codigoBarras: string;
+  marca?: string | null;
+  imagenUrl?: string | null;
+  categorias?: string | null;
+  ingredientes?: string | null;
+  alergenos?: string | null;
+  nutriScore?: string | null;
+  nova?: number | null;
 }
 
 export interface ExternalProductDto {
@@ -13,6 +20,12 @@ export interface ExternalProductDto {
   cantidad?: string | null;
   marca?: string | null;
   imagenUrl?: string | null;
+  codigoBarras?: string | null;
+  categorias?: string | null;
+  ingredientes?: string | null;
+  alergenos?: string | null;
+  nutriScore?: string | null;
+  nova?: number | null;
 }
 
 export interface ProductoDto extends EntityDto<string> {
@@ -20,6 +33,13 @@ export interface ProductoDto extends EntityDto<string> {
   nombreEn?: string | null;
   cantidad?: string | null;
   codigoBarras?: string;
+  marca?: string | null;
+  imagenUrl?: string | null;
+  categorias?: string | null;
+  ingredientes?: string | null;
+  alergenos?: string | null;
+  nutriScore?: string | null;
+  nova?: number | null;
 }
 
 export interface SearchProductInputDto {
