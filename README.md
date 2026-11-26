@@ -134,3 +134,14 @@ Esta es una aplicación monolítica en capas que consta de las siguientes aplica
 - `SmartPantry.DbMigrator`: Una aplicación de consola que aplica las migraciones y realiza la carga inicial de datos (seeding). Es útil tanto en entornos de desarrollo como de producción.
 - `SmartPantry.HttpApi.Host`: Aplicación API en ASP.NET Core que se utiliza para exponer los servicios web/APIs a los clientes.
 
+## Consideraciones de Requerimientos Funcionales
+
+### RF-02 - Perfil de Usuario y Foto Opcional
+En la validación del flujo de perfil (`/account/manage`) provisto por el módulo base `Volo.Abp.Account`:
+- **Nombre visible y Correo Electrónico:** Están soportados de forma nativa. El usuario puede consultar y actualizar su `UserName`, `Name`, `Surname` y `Email`. Los cambios persisten correctamente en la base de datos a través de `ProfileAppService`.
+- **Carga de Foto de Perfil (Avatar):** La plantilla base de ABP Framework (versión Community / Open Source) no incluye de forma predeterminada la subida ni almacenamiento de imágenes de avatar en `IdentityUser` ni en el componente `@abp/ng.account`.
+- **Estrategia técnica para su implementación futura:**
+  1. **Backend:** Extender la entidad `IdentityUser` mediante el sistema de propiedades de módulo (`SmartPantryModuleExtensionConfigurator` / `ObjectExtensionManager`) o implementar el almacenamiento binario utilizando el módulo `BlobStoring` (`IBlobContainer<ProfilePictureContainer>`) para persistir la imagen o su URL.
+  2. **Frontend:** Reemplazar o extender el componente `ManageProfileComponent` de `@abp/ng.account` mediante el `ReplaceableComponentsService` de ABP para incorporar el campo de subida de archivos (`<input type="file" accept="image/*">`).
+
+

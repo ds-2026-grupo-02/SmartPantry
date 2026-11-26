@@ -1,3 +1,4 @@
 import * as Despensa from './despensa';
+import * as Perfil from './perfil';
 import * as Productos from './productos';
-export { Despensa, Productos };
+export { Despensa, Perfil, Productos };

@@ -17,12 +17,14 @@ import { environment } from '../environments/environment';
 import { APP_ROUTES } from './app.routes';
 import { APP_ROUTE_PROVIDER } from './route.provider';
 import { FOOTER_PROVIDER } from './footer/footer.config';
+import { PROFILE_PROVIDER } from './profile/profile.config';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(APP_ROUTES),
     APP_ROUTE_PROVIDER,
     FOOTER_PROVIDER,
+    ...PROFILE_PROVIDER,
     provideAnimations(),
     provideAbpCore(
       withOptions({

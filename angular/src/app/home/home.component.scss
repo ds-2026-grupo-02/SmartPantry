@@ -1,166 +1,34 @@
-/* Styles for the home component */
-.card-bg-image {
-  position: absolute;
-  width: 630px;
-  height: auto;
-  bottom: 0;
-  right: 0;
-  z-index: 1;
-}
-
-.starting-content {
-  position: relative;
-  z-index: 2;
-}
-
-
-.getting-started-hero-card .card-body {
-  position: relative;
-}
-
-.abp-support {
-  width: 178px;
-  height: 30px;
-  background-image: url('/assets/images/getting-started/abp-support.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.abp-community {
-  width: 215px;
-  height: 30px;
-  background-image: url('/assets/images/getting-started/abp-community.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.abp-blog {
-  width: 142px;
-  height: 30px;
-  background-image: url('/assets/images/getting-started/abp-blog.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.abp-studio {
-  width: 146px;
-  height: 30px;
-  background-image: url('/assets/images/getting-started/abp-studio.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.abp-suite {
-  width: 132px;
-  height: 30px;
-  background-image: url('/assets/images/getting-started/abp-suite.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.logo-x {
-  width: 20px;
-  height: 20px;
-  background-image: url('/assets/images/getting-started/x.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.entity-famework-core {
-  width: 84px;
-  height: 24px;
-  background-image: url('/assets/images/getting-started/entity-famework-core-dark.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.mongo-db {
-  width: 85px;
-  height: 24px;
-  background-image: url('/assets/images/getting-started/mongo-db-dark.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.blazor {
-  width: 65px;
-  height: 20px;
-  background-image: url('/assets/images/getting-started/blazor-dark.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.angular {
-  width: 82px;
-  height: 20px;
-  background-image: url('/assets/images/getting-started/angular-dark.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-.mvc-razor-pages {
-  width: 95px;
-  height: 20px;
-  background-image: url('/assets/images/getting-started/mvc-razor-pages-dark.svg');
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-:host-context(.lpx-theme-dark) {
-  .abp-support {
-    background-image: url('/assets/images/getting-started/abp-support-white.svg');
+.smart-pantry-home {
+  .hero-banner {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 248, 255, 0.92));
+    border-color: #e2e8f0 !important;
   }
 
-  .abp-community {
-    background-image: url('/assets/images/getting-started/abp-community-white.svg');
+  .hero-icon {
+    width: 60px;
+    height: 60px;
   }
 
-  .abp-blog {
-    background-image: url('/assets/images/getting-started/abp-blog-white.svg');
+  .module-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid #e9ecef !important;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+    }
   }
 
-  .logo-x {
-    background-image: url('/assets/images/getting-started/x-white.svg');
+  .module-icon-wrapper {
+    width: 52px;
+    height: 52px;
   }
 
-  .abp-studio {
-    background-image: url('/assets/images/getting-started/abp-studio-white.svg');
+  .border-dashed {
+    border-style: dashed !important;
   }
 
-  .abp-suite {
-    background-image: url('/assets/images/getting-started/abp-suite-white.svg');
-  }
-
-  .entity-famework-core {
-    background-image: url('/assets/images/getting-started/entity-famework-core.svg');
-  }
-
-  .mongo-db {
-    background-image: url('/assets/images/getting-started/mongo-db.svg');
-  }
-
-  .blazor {
-    background-image: url('/assets/images/getting-started/blazor.svg');
-  }
-
-  .angular {
-    background-image: url('/assets/images/getting-started/angular.svg');
-  }
-
-  .mvc-razor-pages {
-    background-image: url('/assets/images/getting-started/mvc-razor-pages.svg');
-  }
-}
-
-
-@media (min-width: 1199px) {
-  .h-lg-100 {
-    height: 100% !important;
-  }
-}
-
-@media (min-width: 768px) {
-  .h-md-100 {
-    height: 100% !important;
+  .max-w-500 {
+    max-width: 500px;
   }
 }
