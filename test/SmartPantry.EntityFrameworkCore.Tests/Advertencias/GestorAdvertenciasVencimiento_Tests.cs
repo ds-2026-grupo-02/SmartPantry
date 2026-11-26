@@ -24,6 +24,7 @@ public class GestorAdvertenciasVencimiento_Tests : SmartPantryEntityFrameworkCor
 
     // 1. REQUERIMIENTO: Probar fecha controlada UTC (Dentro/Fuera de umbral, Día límite, Vencido)
     [Theory]
+    [InlineData(3, true)]   // Límite exacto del umbral (vence en 3 días) -> Genera advertencia
     [InlineData(2, true)]   // Dentro del umbral (2 días antes) -> Genera advertencia
     [InlineData(0, true)]   // Día límite (vence hoy) -> Genera advertencia
     [InlineData(-1, false)] // Vencido (venció ayer) -> No genera advertencia
