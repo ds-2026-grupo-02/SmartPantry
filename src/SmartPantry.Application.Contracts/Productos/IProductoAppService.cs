@@ -13,4 +13,5 @@ public interface IProductoAppService :
         CreateUpdateProductoDto> // Used to create/update a product>
 {
     Task<ExternalProductDto?> SearchByBarcodeAsync(SearchProductInputDto input);
+    Task<ProductoDto> SaveFromExternalAsync(SearchProductInputDto input);
 }

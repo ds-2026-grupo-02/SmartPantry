@@ -109,6 +109,7 @@
     "Pantry:Error:DeleteFailed": "No se pudo eliminar el ítem. Verifique la conexión con el servidor.",
     "Pantry:Error:ConnectionTitle": "Error de conexión",
     "Pantry:ConsumeConfirmation": "¿Marcar elemento como consumido?",
-    "Pantry:WithoutName": "Sin nombre"
+    "Pantry:WithoutName": "Sin nombre",
+    "SmartPantry:ProductoCodigoBarrasDuplicado": "Ya existe un producto registrado con el código de barras '{CodigoBarras}'."
   }
 }
