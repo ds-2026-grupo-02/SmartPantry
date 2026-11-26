@@ -8,21 +8,23 @@
         </div>
         <div>
           <h1 class="display-6 fw-bold mb-1 text-primary">SmartPantry</h1>
-          <p class="text-muted mb-0">{{ '::Home:HeroSubtitle' | abpLocalization }}</p>
+          <p class="mb-0" style="color: #343a40;">{{ '::Home:HeroSubtitle' | abpLocalization }}</p>
         </div>
       </div>
 
-      <p class="col-md-9 fs-5 text-secondary">
+      <p class="col-md-9 fs-5" style="color: #212529;">
         {{ '::Home:HeroDescription' | abpLocalization }}
       </p>
 
       <!-- Si el usuario NO está autenticado (invitado) -->
-      <div *ngIf="!hasLoggedIn" class="mt-4 p-3 bg-light rounded-3 border d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+      <div *ngIf="!hasLoggedIn"
+           class="mt-4 p-3 rounded-3 border d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3"
+           style="background-color: #f8f9fa;">
         <div>
-          <h5 class="mb-1 text-dark fw-semibold">
+          <h5 class="mb-1 fw-semibold" style="color: #212529;">
             <i class="fas fa-user-lock me-2 text-warning"></i>{{ '::Home:GuestBannerTitle' | abpLocalization }}
           </h5>
-          <p class="mb-0 text-muted small">
+          <p class="mb-0 small" style="color: #343a40;">
             {{ '::Home:GuestBannerDescription' | abpLocalization }}
           </p>
         </div>
@@ -42,22 +44,22 @@
 
   <!-- Accesos directos / Módulos -->
   <div class="section-title mb-3">
-    <h4 class="fw-bold text-dark">
+    <h4 class="fw-bold" style="color: #212529;">
       <i class="fas fa-th-large me-2 text-primary"></i>{{ '::Home:QuickAccessTitle' | abpLocalization }}
     </h4>
-    <p class="text-muted small">{{ '::Home:QuickAccessSubtitle' | abpLocalization }}</p>
+    <p class="small" style="color: #343a40;">{{ '::Home:QuickAccessSubtitle' | abpLocalization }}</p>
   </div>
 
   <div class="row g-4">
     <!-- 1. Búsqueda de Productos (Público - Visible para todos) -->
     <div class="col-md-6 col-lg-3">
-      <div class="card h-100 shadow-sm border-0 module-card">
+      <div class="card h-100 shadow-sm border-0 module-card bg-white">
         <div class="card-body d-flex flex-column">
           <div class="module-icon-wrapper bg-primary-subtle text-primary rounded-3 mb-3 d-flex align-items-center justify-content-center">
             <i class="fas fa-search fs-3"></i>
           </div>
-          <h5 class="card-title fw-bold">{{ '::Home:SearchTitle' | abpLocalization }}</h5>
-          <p class="card-text text-muted small flex-grow-1">
+          <h5 class="card-title fw-bold" style="color: #212529;">{{ '::Home:SearchTitle' | abpLocalization }}</h5>
+          <p class="card-text small flex-grow-1" style="color: #343a40;">
             {{ '::Home:SearchDescription' | abpLocalization }}
           </p>
           <a [routerLink]="['/search']" class="btn btn-outline-primary mt-3 w-100">
@@ -70,13 +72,13 @@
     <!-- Módulos privados condicionados a *ngIf="hasLoggedIn" -->
     <!-- 2. Mi Despensa -->
     <div *ngIf="hasLoggedIn" class="col-md-6 col-lg-3">
-      <div class="card h-100 shadow-sm border-0 module-card">
+      <div class="card h-100 shadow-sm border-0 module-card bg-white">
         <div class="card-body d-flex flex-column">
           <div class="module-icon-wrapper bg-success-subtle text-success rounded-3 mb-3 d-flex align-items-center justify-content-center">
             <i class="fas fa-shopping-basket fs-3"></i>
           </div>
-          <h5 class="card-title fw-bold">{{ '::Home:PantryTitle' | abpLocalization }}</h5>
-          <p class="card-text text-muted small flex-grow-1">
+          <h5 class="card-title fw-bold" style="color: #212529;">{{ '::Home:PantryTitle' | abpLocalization }}</h5>
+          <p class="card-text small flex-grow-1" style="color: #343a40;">
             {{ '::Home:PantryDescription' | abpLocalization }}
           </p>
           <a [routerLink]="['/pantry']" class="btn btn-outline-success mt-3 w-100">
@@ -88,13 +90,13 @@
 
     <!-- 3. Preferencias Alimentarias -->
     <div *ngIf="hasLoggedIn" class="col-md-6 col-lg-3">
-      <div class="card h-100 shadow-sm border-0 module-card">
+      <div class="card h-100 shadow-sm border-0 module-card bg-white">
         <div class="card-body d-flex flex-column">
           <div class="module-icon-wrapper bg-info-subtle text-info rounded-3 mb-3 d-flex align-items-center justify-content-center">
             <i class="fas fa-sliders-h fs-3"></i>
           </div>
-          <h5 class="card-title fw-bold">{{ '::Home:PreferencesTitle' | abpLocalization }}</h5>
-          <p class="card-text text-muted small flex-grow-1">
+          <h5 class="card-title fw-bold" style="color: #212529;">{{ '::Home:PreferencesTitle' | abpLocalization }}</h5>
+          <p class="card-text small flex-grow-1" style="color: #343a40;">
             {{ '::Home:PreferencesDescription' | abpLocalization }}
           </p>
           <a [routerLink]="['/preferences']" class="btn btn-outline-info mt-3 w-100">
@@ -106,13 +108,13 @@
 
     <!-- 4. Avisos y Alertas -->
     <div *ngIf="hasLoggedIn" class="col-md-6 col-lg-3">
-      <div class="card h-100 shadow-sm border-0 module-card">
+      <div class="card h-100 shadow-sm border-0 module-card bg-white">
         <div class="card-body d-flex flex-column">
           <div class="module-icon-wrapper bg-warning-subtle text-warning rounded-3 mb-3 d-flex align-items-center justify-content-center">
             <i class="fas fa-bell fs-3"></i>
           </div>
-          <h5 class="card-title fw-bold">{{ '::Home:AlertsTitle' | abpLocalization }}</h5>
-          <p class="card-text text-muted small flex-grow-1">
+          <h5 class="card-title fw-bold" style="color: #212529;">{{ '::Home:AlertsTitle' | abpLocalization }}</h5>
+          <p class="card-text small flex-grow-1" style="color: #343a40;">
             {{ '::Home:AlertsDescription' | abpLocalization }}
           </p>
           <a [routerLink]="['/alerts']" class="btn btn-outline-warning mt-3 w-100">
@@ -124,13 +126,13 @@
 
     <!-- Banner adicional para invitados indicando lo que se desbloquea al loguearse -->
     <div *ngIf="!hasLoggedIn" class="col-md-6 col-lg-9">
-      <div class="card h-100 border-dashed border-2 bg-light-subtle">
+      <div class="card h-100 border-dashed border-2" style="background-color: #f8f9fa;">
         <div class="card-body d-flex flex-column justify-content-center align-items-center text-center p-4">
-          <div class="text-muted mb-2 fs-2">
+          <div class="mb-2 fs-2" style="color: #495057;">
             <i class="fas fa-lock"></i>
           </div>
-          <h5 class="text-secondary fw-semibold">{{ '::Home:GuestProtectedTitle' | abpLocalization }}</h5>
-          <p class="text-muted small mb-3 max-w-500">
+          <h5 class="fw-semibold" style="color: #212529;">{{ '::Home:GuestProtectedTitle' | abpLocalization }}</h5>
+          <p class="small mb-3 max-w-500" style="color: #343a40;">
             {{ '::Home:GuestProtectedDescription' | abpLocalization }}
           </p>
           <button (click)="login()" class="btn btn-sm btn-outline-primary">

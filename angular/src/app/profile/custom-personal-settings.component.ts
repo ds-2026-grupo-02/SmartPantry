@@ -17,11 +17,14 @@ import { PerfilStateService } from './perfil-state.service';
         <h5 class="card-title mb-0 fw-bold text-primary">
           <i class="fas fa-user-circle me-2"></i>{{ '::Profile:Title' | abpLocalization }}
         </h5>
-        <small class="text-muted">{{ '::Profile:Subtitle' | abpLocalization }}</small>
+        <small style="color: #343a40;">{{ '::Profile:Subtitle' | abpLocalization }}</small>
       </div>
       <div class="card-body p-4">
         <!-- Sección Foto de Perfil (RF-02) -->
-        <div class="d-flex flex-column flex-sm-row align-items-center gap-4 p-3 bg-light rounded-3 mb-4 border">
+        <div
+          class="d-flex flex-column flex-sm-row align-items-center gap-4 p-3 rounded-3 mb-4 border"
+          style="background-color: #f8f9fa;"
+        >
           <div class="avatar-wrapper position-relative">
             <img
               *ngIf="fotoPerfil; else defaultAvatar"
@@ -47,8 +50,8 @@ import { PerfilStateService } from './perfil-state.service';
           </div>
 
           <div class="text-center text-sm-start flex-grow-1">
-            <h6 class="fw-bold mb-1">{{ '::Profile:PhotoLabel' | abpLocalization }}</h6>
-            <p class="text-muted small mb-2">{{ '::Profile:PhotoHint' | abpLocalization }}</p>
+            <h6 class="fw-bold mb-1" style="color: #212529;">{{ '::Profile:PhotoLabel' | abpLocalization }}</h6>
+            <p class="small mb-2" style="color: #343a40;">{{ '::Profile:PhotoHint' | abpLocalization }}</p>
             <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-sm-start">
               <label class="btn btn-sm btn-outline-primary mb-0" [class.disabled]="isSavingPhoto">
                 <i class="fas fa-camera me-1"></i>{{ '::Profile:UploadPhoto' | abpLocalization }}
