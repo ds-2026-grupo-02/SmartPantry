@@ -1,18 +1,19 @@
-using System.Diagnostics;
-using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Guids;
-using Volo.Abp.Timing;
-using Volo.Abp.Uow;
-using SmartPantry.Productos;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using SmartPantry.Productos;
 using Volo.Abp;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Guids;
+using Volo.Abp.Timing;
+using Volo.Abp.Uow;
 
 namespace SmartPantry.CatalogoExterno;
 
@@ -23,20 +24,23 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
     private readonly IUnitOfWorkManager _unitOfWorkManager;
     private readonly IGuidGenerator _guidGenerator;
     private readonly IClock _clock;
+    private readonly ILogger<OpenFoodFactsProductCatalogClient> _logger;
 
     // Inyectamos el HttpClient que será configurado mediante IHttpClientFactory
     public OpenFoodFactsProductCatalogClient(
-    HttpClient httpClient,
-    IRepository<RegistroLlamadaExterna, Guid> registroRepository,
-    IUnitOfWorkManager unitOfWorkManager,
-    IGuidGenerator guidGenerator,
-    IClock clock)
+        HttpClient httpClient,
+        IRepository<RegistroLlamadaExterna, Guid> registroRepository,
+        IUnitOfWorkManager unitOfWorkManager,
+        IGuidGenerator guidGenerator,
+        IClock clock,
+        ILogger<OpenFoodFactsProductCatalogClient> logger)
     {
         _httpClient = httpClient;
         _registroRepository = registroRepository;
         _unitOfWorkManager = unitOfWorkManager;
         _guidGenerator = guidGenerator;
         _clock = clock;
+        _logger = logger;
     }
 
     public async Task<ExternalProductDto?> GetByBarcodeAsync(string barcode)
@@ -49,14 +53,14 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
         const string fields = "code,product_name,product_name_en,product_name_es,quantity,brands,image_front_url,categories,categories_tags,ingredients_text_es,ingredients_text_en,ingredients_text,allergens,allergens_tags,nutriscore_grade,nova_group";
         var requestUri = $"product/{Uri.EscapeDataString(barcode)}?fields={Uri.EscapeDataString(fields)}";
 
-        var fechaInicioUtc = _clock.Now.ToUniversalTime();
+        var fechaInicioUtc = NormalizarComoUtc(_clock.Now);
         var stopwatch = Stopwatch.StartNew();
         var resultado = ResultadoLlamadaExterna.Error;
         int? codigoHttp = null;
 
         try
         {
-            var response = await _httpClient.GetAsync(requestUri);
+            using var response = await _httpClient.GetAsync(requestUri);
             codigoHttp = (int)response.StatusCode;
 
             if (response.StatusCode == HttpStatusCode.NotFound)
@@ -165,10 +169,25 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
             await _registroRepository.InsertAsync(registro, autoSave: true);
             await uow.CompleteAsync();
         }
-        catch
+        catch (Exception ex)
         {
-            // La telemetría nunca debe interrumpir ni ocultar la respuesta o excepción del catálogo externo
+            _logger.LogWarning(
+                ex,
+                "No se pudo registrar la métrica de llamada externa (Operación: {TipoOperacion}, Resultado: {Resultado}, CodigoHttp: {CodigoHttp}).",
+                tipoOperacion,
+                resultado,
+                codigoHttp);
         }
+    }
+
+    private static DateTime NormalizarComoUtc(DateTime fecha)
+    {
+        return fecha.Kind switch
+        {
+            DateTimeKind.Utc => fecha,
+            DateTimeKind.Local => fecha.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(fecha, DateTimeKind.Utc)
+        };
     }
 
     private static string? TrimOrNull(string? valor)
