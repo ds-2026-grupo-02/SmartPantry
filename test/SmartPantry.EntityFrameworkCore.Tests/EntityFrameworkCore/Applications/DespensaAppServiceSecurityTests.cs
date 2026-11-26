@@ -64,14 +64,14 @@ public class DespensaAppServiceSecurityTests : SmartPantryEntityFrameworkCoreTes
             itemUser1Id = creado.Id;
 
             // Usuario 1 sí puede ver su propio ítem
-            var listaUser1 = await _despensaAppService.GetListAsync(new PagedAndSortedResultRequestDto());
+            var listaUser1 = await _despensaAppService.GetListAsync(new GetDespensaListInput ());
             listaUser1.Items.ShouldContain(x => x.Id == itemUser1Id);
         }
 
         // Act & Assert: Usuario 2 consulta su despensa
         using (ChangeUser(user2Id))
         {
-            var listaUser2 = await _despensaAppService.GetListAsync(new PagedAndSortedResultRequestDto());
+            var listaUser2 = await _despensaAppService.GetListAsync(new GetDespensaListInput());
 
             // La consulta de Usuario 2 NO debe incluir el ítem del Usuario 1
             listaUser2.Items.ShouldNotContain(x => x.Id == itemUser1Id);
