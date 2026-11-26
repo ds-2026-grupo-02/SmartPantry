@@ -206,9 +206,17 @@ namespace SmartPantry.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Alergenos")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
                     b.Property<string>("Cantidad")
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Categorias")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
 
                     b.Property<string>("CodigoBarras")
                         .IsRequired()
@@ -227,6 +235,18 @@ namespace SmartPantry.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<string>("ImagenUrl")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<string>("Ingredientes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Marca")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
                     b.Property<string>("NombreEn")
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
@@ -235,7 +255,17 @@ namespace SmartPantry.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
+                    b.Property<int?>("Nova")
+                        .HasColumnType("int");
+
+                    b.Property<string>("NutriScore")
+                        .HasMaxLength(1)
+                        .HasColumnType("nvarchar(1)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CodigoBarras")
+                        .IsUnique();
 
                     b.ToTable("AppProductos", (string)null);
                 });

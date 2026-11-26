@@ -1,5 +1,7 @@
 using SmartPantry.Productos;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -27,7 +29,7 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
         }
 
         // Endpoint v3 de Open Food Facts para buscar por código de barras
-        const string fields = "code,product_name,product_name_en,product_name_es,quantity,brands,image_front_url";
+        const string fields = "code,product_name,product_name_en,product_name_es,quantity,brands,image_front_url,categories,categories_tags,ingredients_text_es,ingredients_text_en,ingredients_text,allergens,allergens_tags,nutriscore_grade,nova_group";
         var requestUri = $"product/{Uri.EscapeDataString(barcode)}?fields={Uri.EscapeDataString(fields)}";
 
         try
@@ -58,18 +60,28 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
                 return null;
             }
 
-            var nombreEn = !string.IsNullOrWhiteSpace(offResponse.Product.ProductNameEn)
-                ? offResponse.Product.ProductNameEn.Trim()
-                : (string.IsNullOrWhiteSpace(offResponse.Product.ProductName) ? null : offResponse.Product.ProductName.Trim());
+            var product = offResponse.Product;
+
+            var nombreEn = TrimOrNull(product.ProductNameEn) ?? TrimOrNull(product.ProductName);
+
+            var ingredientes = TrimOrNull(product.IngredientsTextEs)
+                ?? TrimOrNull(product.IngredientsTextEn)
+                ?? TrimOrNull(product.IngredientsText);
 
             // Mapeamos de la respuesta cruda al ExternalProductDto propio (RF-09: traduciendo sin inventar)
             return new ExternalProductDto
             {
+                CodigoBarras = TrimOrNull(product.Code) ?? barcode.Trim(),
                 Nombre = nombreEn,
-                NombreEs = string.IsNullOrWhiteSpace(offResponse.Product.ProductNameEs) ? null : offResponse.Product.ProductNameEs.Trim(),
-                Cantidad = string.IsNullOrWhiteSpace(offResponse.Product.Quantity) ? null : offResponse.Product.Quantity.Trim(),
-                Marca = string.IsNullOrWhiteSpace(offResponse.Product.Brands) ? null : offResponse.Product.Brands.Trim(),
-                ImagenUrl = string.IsNullOrWhiteSpace(offResponse.Product.ImageFrontUrl) ? null : offResponse.Product.ImageFrontUrl.Trim()
+                NombreEs = TrimOrNull(product.ProductNameEs),
+                Cantidad = TrimOrNull(product.Quantity),
+                Marca = TrimOrNull(product.Brands),
+                ImagenUrl = TrimOrNull(product.ImageFrontUrl),
+                Categorias = NormalizarLista(product.Categories) ?? NormalizarTags(product.CategoriesTags),
+                Ingredientes = ingredientes,
+                Alergenos = NormalizarTags(product.AllergensTags) ?? NormalizarLista(product.Allergens),
+                NutriScore = NormalizarNutriScore(product.NutriScoreGrade),
+                Nova = NormalizarNova(product.NovaGroup)
             };
         }
         catch (TaskCanceledException)
@@ -80,6 +92,81 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
         {
             throw new UserFriendlyException("No se pudo conectar con el catálogo externo de Open Food Facts.");
         }
+    }
+
+    private static string? TrimOrNull(string? valor)
+    {
+        return string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
+    }
+
+    private static string? NormalizarNutriScore(string? grade)
+    {
+        var trimmed = TrimOrNull(grade)?.ToUpperInvariant();
+        if (trimmed != null && trimmed.Length == 1 && trimmed[0] >= 'A' && trimmed[0] <= 'E')
+        {
+            return trimmed;
+        }
+
+        return null;
+    }
+
+    private static int? NormalizarNova(int? novaGroup)
+    {
+        return novaGroup.HasValue &&
+               novaGroup.Value >= ProductoConsts.MinNova &&
+               novaGroup.Value <= ProductoConsts.MaxNova
+            ? novaGroup.Value
+            : null;
+    }
+
+    private static string? NormalizarLista(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        var items = raw
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(LimpiarTag)
+            .Where(x => !string.IsNullOrEmpty(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return items.Length == 0 ? null : string.Join(", ", items);
+    }
+
+    private static string? NormalizarTags(IEnumerable<string>? tags)
+    {
+        if (tags == null)
+        {
+            return null;
+        }
+
+        var items = tags
+            .Select(LimpiarTag)
+            .Where(x => !string.IsNullOrEmpty(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return items.Length == 0 ? null : string.Join(", ", items);
+    }
+
+    private static string LimpiarTag(string? tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag))
+        {
+            return string.Empty;
+        }
+
+        var limpio = tag.Trim();
+        var colonIndex = limpio.IndexOf(':');
+        if (colonIndex > 0 && colonIndex < limpio.Length - 1)
+        {
+            limpio = limpio[(colonIndex + 1)..];
+        }
+
+        return limpio.Replace('-', ' ').Trim();
     }
 
     #region Clases privadas para desmaterializar el JSON crudo de Open Food Facts
@@ -94,6 +181,9 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
 
     private class OpenFoodFactsProductData
     {
+        [JsonPropertyName("code")]
+        public string? Code { get; set; }
+
         [JsonPropertyName("product_name")]
         public string? ProductName { get; set; }
 
@@ -111,6 +201,34 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
 
         [JsonPropertyName("image_front_url")]
         public string? ImageFrontUrl { get; set; }
+
+        [JsonPropertyName("categories")]
+        public string? Categories { get; set; }
+
+        [JsonPropertyName("categories_tags")]
+        public List<string>? CategoriesTags { get; set; }
+
+        [JsonPropertyName("ingredients_text_es")]
+        public string? IngredientsTextEs { get; set; }
+
+        [JsonPropertyName("ingredients_text_en")]
+        public string? IngredientsTextEn { get; set; }
+
+        [JsonPropertyName("ingredients_text")]
+        public string? IngredientsText { get; set; }
+
+        [JsonPropertyName("allergens")]
+        public string? Allergens { get; set; }
+
+        [JsonPropertyName("allergens_tags")]
+        public List<string>? AllergensTags { get; set; }
+
+        [JsonPropertyName("nutriscore_grade")]
+        public string? NutriScoreGrade { get; set; }
+
+        [JsonPropertyName("nova_group")]
+        [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+        public int? NovaGroup { get; set; }
     }
     #endregion
 }

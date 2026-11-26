@@ -48,6 +48,16 @@ export class ProductoService {
     { apiName: this.apiName,...config });
   
 
+  saveFromExternal = (input: SearchProductInputDto, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, ProductoDto>({
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      url: '/api/app/producto/save-from-external',
+      body: input,
+    },
+    { apiName: this.apiName,...config });
+  
+
   searchByBarcode = (input: SearchProductInputDto, config?: Partial<Rest.Config>) =>
     this.restService.request<any, ExternalProductDto>({
       method: 'POST',

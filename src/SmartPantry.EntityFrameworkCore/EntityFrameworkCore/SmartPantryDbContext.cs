@@ -104,6 +104,27 @@ public class SmartPantryDbContext :
             b.Property(x => x.CodigoBarras)
              .IsRequired()
              .HasMaxLength(ProductoConsts.MaxCodigoBarrasLength);
+
+            b.Property(x => x.Marca)
+             .HasMaxLength(ProductoConsts.MaxMarcaLength);
+
+            b.Property(x => x.ImagenUrl)
+             .HasMaxLength(ProductoConsts.MaxImagenUrlLength);
+
+            b.Property(x => x.Categorias)
+             .HasMaxLength(ProductoConsts.MaxCategoriasLength);
+
+            b.Property(x => x.Ingredientes)
+             .HasMaxLength(ProductoConsts.MaxIngredientesLength);
+
+            b.Property(x => x.Alergenos)
+             .HasMaxLength(ProductoConsts.MaxAlergenosLength);
+
+            b.Property(x => x.NutriScore)
+             .HasMaxLength(ProductoConsts.MaxNutriScoreLength);
+
+            b.HasIndex(x => x.CodigoBarras)
+             .IsUnique();
         });
 
         builder.Entity<ItemDespensa>(b =>

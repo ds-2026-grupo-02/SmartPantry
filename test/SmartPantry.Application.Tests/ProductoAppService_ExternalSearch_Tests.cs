@@ -1,8 +1,9 @@
-using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Shouldly;
 using SmartPantry.CatalogoExterno;
 using System;
+using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
@@ -30,10 +31,17 @@ public class ProductoAppService_ExternalSearch_Tests
         var barcodeValido = "3017620422003";
         var mockExternalDto = new ExternalProductDto
         {
+            CodigoBarras = barcodeValido,
             Nombre = "Nutella",
             NombreEs = "Nutella",
+            Cantidad = "400 g",
             Marca = "Ferrero",
-            ImagenUrl = "https://images.openfoodfacts.org/nutella.jpg"
+            ImagenUrl = "https://images.openfoodfacts.org/nutella.jpg",
+            Categorias = "Untables, Chocolates",
+            Ingredientes = "Azúcar, aceite de palma, avellanas",
+            Alergenos = "milk, nuts, soybeans",
+            NutriScore = "E",
+            Nova = 4
         };
 
         // Configuramos el mock para que devuelva el producto simulado al buscar este código
@@ -41,9 +49,17 @@ public class ProductoAppService_ExternalSearch_Tests
 
         var result = await _productoAppService.SearchByBarcodeAsync(new SearchProductInputDto { CodigoBarras = barcodeValido });
         result.ShouldNotBeNull();
+        result.CodigoBarras.ShouldBe(barcodeValido);
         result.Nombre.ShouldBe("Nutella");
         result.NombreEs.ShouldBe("Nutella");
+        result.Cantidad.ShouldBe("400 g");
         result.Marca.ShouldBe("Ferrero");
+        result.ImagenUrl.ShouldBe("https://images.openfoodfacts.org/nutella.jpg");
+        result.Categorias.ShouldBe("Untables, Chocolates");
+        result.Ingredientes.ShouldBe("Azúcar, aceite de palma, avellanas");
+        result.Alergenos.ShouldBe("milk, nuts, soybeans");
+        result.NutriScore.ShouldBe("E");
+        result.Nova.ShouldBe(4);
     }
 
     [Fact]
@@ -98,7 +114,58 @@ public class ProductoAppService_ExternalSearch_Tests
         result.ShouldNotBeNull();
         result.Nombre.ShouldBe("Galletitas");
         result.NombreEs.ShouldBeNull();
+        result.Cantidad.ShouldBeNull();
         result.Marca.ShouldBeNull();
         result.ImagenUrl.ShouldBeNull();
+        result.Categorias.ShouldBeNull();
+        result.Ingredientes.ShouldBeNull();
+        result.Alergenos.ShouldBeNull();
+        result.NutriScore.ShouldBeNull();
+        result.Nova.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task SaveFromExternalAsync_Deberia_Lanzar_UserFriendlyException_Si_Input_Es_Vacio()
+    {
+        await Should.ThrowAsync<UserFriendlyException>(async () =>
+        {
+            await _productoAppService.SaveFromExternalAsync(new SearchProductInputDto { CodigoBarras = "   " });
+        });
+    }
+
+    [Fact]
+    public async Task SaveFromExternalAsync_Deberia_Lanzar_UserFriendlyException_Cuando_Producto_No_Existe_En_API_Externa()
+    {
+        var barcode = "0000000000001";
+        _productoRepositoryMock
+            .FirstOrDefaultAsync(Arg.Any<Expression<Func<Producto, bool>>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<Producto?>(null));
+        _externalClientMock.GetByBarcodeAsync(barcode).Returns(Task.FromResult<ExternalProductDto?>(null));
+
+        await Should.ThrowAsync<UserFriendlyException>(async () =>
+        {
+            await _productoAppService.SaveFromExternalAsync(new SearchProductInputDto { CodigoBarras = barcode });
+        });
+    }
+
+    [Fact]
+    public async Task SaveFromExternalAsync_Deberia_Lanzar_UserFriendlyException_Cuando_Producto_Externo_No_Tiene_Nombre()
+    {
+        var barcode = "0000000000002";
+        _productoRepositoryMock
+            .FirstOrDefaultAsync(Arg.Any<Expression<Func<Producto, bool>>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<Producto?>(null));
+        _externalClientMock.GetByBarcodeAsync(barcode).Returns(Task.FromResult<ExternalProductDto?>(new ExternalProductDto
+        {
+            CodigoBarras = barcode,
+            Nombre = null,
+            NombreEs = null,
+            Marca = "Marca sin nombre"
+        }));
+
+        await Should.ThrowAsync<UserFriendlyException>(async () =>
+        {
+            await _productoAppService.SaveFromExternalAsync(new SearchProductInputDto { CodigoBarras = barcode });
+        });
     }
 }
