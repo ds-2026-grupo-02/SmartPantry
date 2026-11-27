@@ -1,15 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
-import { LocalizationModule, LocalizationService, PagedResultDto } from '@abp/ng.core';
+import { Component, Input, NO_ERRORS_SCHEMA } from '@angular/core';
+import { LocalizationService, PagedResultDto } from '@abp/ng.core';
+import { NgxDatatableModule } from '@swimlane/ngx-datatable';
 import {
   ConfirmationService,
   Confirmation,
   ToasterService,
   ThemeSharedModule,
-  DEFAULT_VALIDATION_BLUEPRINTS,
 } from '@abp/ng.theme.shared';
-import { NgxValidateCoreModule } from '@ngx-validate/core';
 import { of, throwError } from 'rxjs';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
@@ -17,11 +17,41 @@ import { PantryComponent } from './pantry.component';
 import { DespensaService } from '../proxy/despensa/despensa.service';
 import { DespensaDto } from '../proxy/despensa/models';
 import { EstadoVencimiento } from '../proxy/despensa/estado-vencimiento.enum';
-import { AdvertenciaVencimientoService } from '../proxy/advertencias/advertencia-vencimiento.service';
-import { AdvertenciaVencimientoDto } from '../proxy/advertencias/models';
-import { PreferenciaService } from '../proxy/preferencias/preferencia.service';
-import { PreferenciaDto } from '../proxy/preferencias/models';
-import { ProductoService } from '../proxy/productos/producto.service';
+import { AlertsComponent } from '../alertas/alerts.component';
+
+@Component({
+  selector: 'app-alerts',
+  standalone: true,
+  template: '',
+})
+class MockAlertsComponent {
+  loadAlertas = vi.fn();
+  registrarNombreItem = vi.fn();
+  eliminarNombreItem = vi.fn();
+  nombresItemsActivos = new Map<string, string>();
+}
+
+@Component({
+  selector: 'ngx-datatable',
+  standalone: true,
+  template: '<div class="ngx-datatable-stub"></div>',
+})
+class MockDatatableComponent {
+  @Input() rows: unknown[] = [];
+  @Input() count = 0;
+  @Input() list: unknown;
+  @Input() scrollbarH = false;
+}
+
+@Component({
+  selector: 'ngx-datatable-column',
+  standalone: true,
+  template: '',
+})
+class MockDatatableColumnComponent {
+  @Input() name = '';
+  @Input() sortable = true;
+}
 
 describe('PantryComponent', () => {
   let component: PantryComponent;
@@ -35,19 +65,6 @@ describe('PantryComponent', () => {
     getNotaPrivada: ReturnType<typeof vi.fn>;
     guardarNotaPrivada: ReturnType<typeof vi.fn>;
     eliminarNotaPrivada: ReturnType<typeof vi.fn>;
-  };
-
-  let mockProductoService: {
-    get: ReturnType<typeof vi.fn>;
-  };
-
-  let mockAdvertenciaService: {
-    getActivas: ReturnType<typeof vi.fn>;
-    marcarComoVista: ReturnType<typeof vi.fn>;
-  };
-
-  let mockPreferenciaService: {
-    get: ReturnType<typeof vi.fn>;
   };
 
   let mockConfirmationService: {
@@ -88,22 +105,6 @@ describe('PantryComponent', () => {
     },
   ];
 
-  const sampleAlertas: AdvertenciaVencimientoDto[] = [
-    {
-      id: 'alert-1',
-      itemDespensaId: '11111111-1111-1111-1111-111111111111',
-      tipoAdvertencia: 'VencimientoProximo',
-      estadoVencimiento: EstadoVencimiento.ProximoAVencer,
-      fechaVencimiento: '2026-12-02',
-    },
-  ];
-
-  const samplePreferencias: PreferenciaDto = {
-    alergenos: ['Arroz'],
-    ingredientes: ['Pasta'],
-    mostrarAlertas: true,
-  };
-
   beforeEach(async () => {
     mockDespensaService = {
       getList: vi.fn().mockReturnValue(
@@ -118,27 +119,6 @@ describe('PantryComponent', () => {
       getNotaPrivada: vi.fn().mockReturnValue(of({ contenido: 'Nota guardada' })),
       guardarNotaPrivada: vi.fn().mockReturnValue(of({})),
       eliminarNotaPrivada: vi.fn().mockReturnValue(of({})),
-    };
-
-    mockProductoService = {
-      get: vi.fn().mockImplementation((id: string) => {
-        if (id === 'prod-1') {
-          return of({ id: 'prod-1', alergenos: ['Arroz'], ingredientes: ['Grano'] });
-        }
-        if (id === 'prod-2') {
-          return of({ id: 'prod-2', alergenos: [], ingredientes: ['Pasta', 'Trigo'] });
-        }
-        return of({ id, alergenos: [], ingredientes: [] });
-      }),
-    };
-
-    mockAdvertenciaService = {
-      getActivas: vi.fn().mockReturnValue(of({ items: sampleAlertas })),
-      marcarComoVista: vi.fn().mockReturnValue(of({})),
-    };
-
-    mockPreferenciaService = {
-      get: vi.fn().mockReturnValue(of(samplePreferencias)),
     };
 
     mockConfirmationService = {
@@ -158,24 +138,37 @@ describe('PantryComponent', () => {
       imports: [
         CommonModule,
         ReactiveFormsModule,
-        LocalizationModule,
-        ThemeSharedModule,
-        NgxValidateCoreModule.forRoot({ blueprints: DEFAULT_VALIDATION_BLUEPRINTS }),
+        NgxDatatableModule,
         PantryComponent,
       ],
       providers: [
         { provide: DespensaService, useValue: mockDespensaService },
-        { provide: ProductoService, useValue: mockProductoService },
-        { provide: AdvertenciaVencimientoService, useValue: mockAdvertenciaService },
-        { provide: PreferenciaService, useValue: mockPreferenciaService },
         { provide: ConfirmationService, useValue: mockConfirmationService },
         { provide: ToasterService, useValue: mockToasterService },
         { provide: LocalizationService, useValue: mockLocalizationService },
       ],
-    }).compileComponents();
+      schemas: [NO_ERRORS_SCHEMA],
+    })
+      .overrideComponent(PantryComponent, {
+        remove: { imports: [AlertsComponent, ThemeSharedModule, NgxDatatableModule] },
+        add: {
+          imports: [
+            MockAlertsComponent,
+            MockDatatableComponent,
+            MockDatatableColumnComponent,
+          ],
+        },
+      })
+      .compileComponents();
 
     fixture = TestBed.createComponent(PantryComponent);
     component = fixture.componentInstance;
+    component.alertsComponent = {
+      loadAlertas: vi.fn(),
+      registrarNombreItem: vi.fn(),
+      eliminarNombreItem: vi.fn(),
+      nombresItemsActivos: new Map<string, string>(),
+    } as unknown as AlertsComponent;
   });
 
   it('debe crearse correctamente el componente', () => {
@@ -217,15 +210,14 @@ describe('PantryComponent', () => {
       expect(retryBtn).toBeTruthy();
     });
 
-    it('al hacer clic en el botón de reintentar debe invocar a loadItems, list.get() y loadAlertas()', () => {
+    it('al hacer clic en el botón de reintentar debe invocar a loadItems, list.get() y alertsComponent.loadAlertas()', () => {
       const listSpy = vi.spyOn(component.list, 'get');
-      mockAdvertenciaService.getActivas.mockClear();
 
       component.loadItems();
 
       expect(component.hasError).toBe(false);
       expect(listSpy).toHaveBeenCalled();
-      expect(mockAdvertenciaService.getActivas).toHaveBeenCalled();
+      expect(component.alertsComponent?.loadAlertas).toHaveBeenCalled();
     });
   });
 
@@ -276,6 +268,7 @@ describe('PantryComponent', () => {
       component.totalCount = sampleItems.length;
       component.isLoading = false;
       component.hasError = false;
+      component['cdr'].detectChanges();
       fixture.detectChanges();
 
       const element: HTMLElement = fixture.nativeElement;
@@ -304,12 +297,23 @@ describe('PantryComponent', () => {
     });
 
     it('debe resolver el nombre del ítem en alertas aunque no esté en la página actual o esté en historial', () => {
-      component.ngOnInit();
+      component.alertsComponent = {
+        loadAlertas: vi.fn(),
+        registrarNombreItem: vi.fn(),
+        eliminarNombreItem: vi.fn(),
+        nombresItemsActivos: new Map<string, string>([
+          ['11111111-1111-1111-1111-111111111111', 'Arroz'],
+        ]),
+      } as unknown as AlertsComponent;
       component.items = [];
       component.soloConsumidos = true;
 
-      expect(component.getNombreProductoPorId('11111111-1111-1111-1111-111111111111', 'VencimientoProximo')).toBe('Arroz');
-      expect(component.getNombreProductoPorId('id-inexistente', 'VencimientoProximo')).toBe('::Pantry:Status:ExpiringSoon');
+      expect(
+        component.getNombreProductoPorId('11111111-1111-1111-1111-111111111111', 'VencimientoProximo')
+      ).toBe('Arroz');
+      expect(component.getNombreProductoPorId('id-inexistente', 'VencimientoProximo')).toBe(
+        '::Pantry:Status:ExpiringSoon'
+      );
     });
   });
 
@@ -350,7 +354,6 @@ describe('PantryComponent', () => {
     it('debe llamar a despensaService.update, cerrar modal y refrescar lista y alertas cuando es válido', () => {
       component.form.get('fechaVencimiento')?.setValue('2028-05-15');
       const listSpy = vi.spyOn(component.list, 'get');
-      mockAdvertenciaService.getActivas.mockClear();
 
       component.save();
 
@@ -361,7 +364,7 @@ describe('PantryComponent', () => {
       );
       expect(component.isModalOpen).toBe(false);
       expect(listSpy).toHaveBeenCalled();
-      expect(mockAdvertenciaService.getActivas).toHaveBeenCalled();
+      expect(component.alertsComponent?.loadAlertas).toHaveBeenCalled();
     });
 
     it('debe manejar error del servidor al guardar sin cerrar el modal y mostrando toaster', () => {
@@ -437,128 +440,7 @@ describe('PantryComponent', () => {
   });
 
   // =========================================================================
-  // 8. ALERTAS ACTIVAS Y COMPATIBILIDAD
-  // =========================================================================
-  describe('Alertas Activas y Compatibilidad', () => {
-    it('debe cargar alertas activas y alertas de compatibilidad al iniciar', () => {
-      component.ngOnInit();
-
-      expect(mockAdvertenciaService.getActivas).toHaveBeenCalledWith({ skipHandleError: true });
-      expect(mockPreferenciaService.get).toHaveBeenCalledWith({ skipHandleError: true });
-      expect(mockProductoService.get).toHaveBeenCalled();
-      expect(component.alertasActivas).toEqual(sampleAlertas);
-      expect(component.alertasCompatibilidad.length).toBe(2);
-      expect(component.alertasCompatibilidad.map(a => a.tipo)).toEqual(['alergeno', 'ingrediente']);
-    });
-
-    it('debe detectar compatibilidad desde alérgenos/ingredientes del producto aunque el nombre sea genérico y evitar falsos positivos por unidad', () => {
-      mockDespensaService.getList.mockReturnValue(
-        of({
-          items: [
-            {
-              id: '33333333-3333-3333-3333-333333333333',
-              usuarioId: 'user-1',
-              productoId: 'prod-galletitas',
-              nombreProductoEs: 'Galletitas',
-              nombreProductoEn: 'Cookies',
-              cantidadProducto: '500 kg',
-              fechaVencimiento: null,
-              estadoVencimiento: EstadoVencimiento.SinFecha,
-              esConsumido: false,
-            },
-          ],
-          totalCount: 1,
-        } as PagedResultDto<DespensaDto>)
-      );
-
-      mockProductoService.get.mockReturnValue(
-        of({
-          id: 'prod-galletitas',
-          alergenos: ['Maní'],
-          ingredientes: ['Harina', 'Leche'],
-        })
-      );
-
-      mockPreferenciaService.get.mockReturnValue(
-        of({
-          alergenos: ['Maní', 'kg'],
-          ingredientes: ['Leche'],
-          mostrarAlertas: true,
-        })
-      );
-
-      component.loadAlertas();
-
-      expect(component.alertasCompatibilidad).toContainEqual({
-        id: 'compat-alergeno-33333333-3333-3333-3333-333333333333-maní',
-        itemDespensaId: '33333333-3333-3333-3333-333333333333',
-        nombreProducto: 'Galletitas',
-        tipo: 'alergeno',
-        coincidencia: 'Maní',
-      });
-
-      expect(component.alertasCompatibilidad).toContainEqual({
-        id: 'compat-ingrediente-33333333-3333-3333-3333-333333333333-leche',
-        itemDespensaId: '33333333-3333-3333-3333-333333333333',
-        nombreProducto: 'Galletitas',
-        tipo: 'ingrediente',
-        coincidencia: 'Leche',
-      });
-
-      expect(component.alertasCompatibilidad.some(a => a.coincidencia === 'kg')).toBe(false);
-    });
-
-    it('debe devolver alertas de compatibilidad vacías cuando mostrarAlertas está desactivado', () => {
-      mockPreferenciaService.get.mockReturnValue(
-        of({ alergenos: ['Arroz'], ingredientes: ['Pasta'], mostrarAlertas: false })
-      );
-
-      component.loadAlertas();
-
-      expect(component.alertasCompatibilidad).toEqual([]);
-    });
-
-    it('debe devolver alertas de compatibilidad vacías cuando no hay coincidencias', () => {
-      mockPreferenciaService.get.mockReturnValue(
-        of({ alergenos: ['Maní'], ingredientes: ['Leche'], mostrarAlertas: true })
-      );
-
-      component.loadAlertas();
-
-      expect(component.alertasCompatibilidad).toEqual([]);
-    });
-
-    it('debe descartar una alerta de compatibilidad y mostrar toaster si falla loadAlertas', () => {
-      component.loadAlertas();
-      const primera = component.alertasCompatibilidad[0];
-      component.descartarAlertaCompatibilidad(primera);
-      expect(component.alertasCompatibilidad.some(a => a.id === primera.id)).toBe(false);
-
-      mockAdvertenciaService.getActivas.mockReturnValue(throwError(() => new Error('Error')));
-      component.loadAlertas();
-      expect(mockToasterService.error).toHaveBeenCalled();
-    });
-
-    it('debe marcar alerta como vista y recargar alertas activas', () => {
-      mockAdvertenciaService.getActivas.mockClear();
-      component.marcarAlertaVista(sampleAlertas[0]);
-
-      expect(mockAdvertenciaService.marcarComoVista).toHaveBeenCalledWith('alert-1', {
-        skipHandleError: true,
-      });
-      expect(mockAdvertenciaService.getActivas).toHaveBeenCalled();
-    });
-
-    it('debe mostrar toaster de error si falla marcarAlertaVista', () => {
-      mockAdvertenciaService.marcarComoVista.mockReturnValue(throwError(() => new Error('Error')));
-      component.marcarAlertaVista(sampleAlertas[0]);
-
-      expect(mockToasterService.error).toHaveBeenCalled();
-    });
-  });
-
-  // =========================================================================
-  // 9. CONFIRMACIÓN Y CANCELACIÓN DE ELIMINACIÓN
+  // 8. CONFIRMACIÓN Y CANCELACIÓN DE ELIMINACIÓN
   // =========================================================================
   describe('Eliminación de Ítem', () => {
     const itemId = '11111111-1111-1111-1111-111111111111';
@@ -566,14 +448,14 @@ describe('PantryComponent', () => {
     it('debe invocar a delete, recargar la lista y alertas si el usuario CONFIRMA', () => {
       mockConfirmationService.warn.mockReturnValue(of(Confirmation.Status.confirm));
       const listSpy = vi.spyOn(component.list, 'get');
-      mockAdvertenciaService.getActivas.mockClear();
 
       component.deleteItem(itemId);
 
       expect(mockConfirmationService.warn).toHaveBeenCalledWith('', '::Pantry:DeleteConfirmation');
       expect(mockDespensaService.delete).toHaveBeenCalledWith(itemId, { skipHandleError: true });
+      expect(component.alertsComponent?.eliminarNombreItem).toHaveBeenCalledWith(itemId);
       expect(listSpy).toHaveBeenCalled();
-      expect(mockAdvertenciaService.getActivas).toHaveBeenCalled();
+      expect(component.alertsComponent?.loadAlertas).toHaveBeenCalled();
     });
 
     it('NO debe invocar a delete si el usuario CANCELA', () => {
@@ -587,7 +469,7 @@ describe('PantryComponent', () => {
   });
 
   // =========================================================================
-  // 10. CONFIRMACIÓN Y CANCELACIÓN DE CONSUMO
+  // 9. CONFIRMACIÓN Y CANCELACIÓN DE CONSUMO
   // =========================================================================
   describe('Consumo de Ítem', () => {
     const itemId = '11111111-1111-1111-1111-111111111111';
@@ -595,7 +477,6 @@ describe('PantryComponent', () => {
     it('debe invocar a marcarConsumido, refrescar lista y alertas si el usuario CONFIRMA', () => {
       mockConfirmationService.warn.mockReturnValue(of(Confirmation.Status.confirm));
       const listSpy = vi.spyOn(component.list, 'get');
-      mockAdvertenciaService.getActivas.mockClear();
 
       component.marcarConsumido(itemId);
 
@@ -603,8 +484,9 @@ describe('PantryComponent', () => {
       expect(mockDespensaService.marcarConsumido).toHaveBeenCalledWith(itemId, {
         skipHandleError: true,
       });
+      expect(component.alertsComponent?.eliminarNombreItem).toHaveBeenCalledWith(itemId);
       expect(listSpy).toHaveBeenCalled();
-      expect(mockAdvertenciaService.getActivas).toHaveBeenCalled();
+      expect(component.alertsComponent?.loadAlertas).toHaveBeenCalled();
     });
 
     it('NO debe invocar a marcarConsumido si el usuario CANCELA', () => {
