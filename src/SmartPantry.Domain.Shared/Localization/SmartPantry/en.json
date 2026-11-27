@@ -111,6 +111,23 @@
     "SmartPantry:00002": "The name cannot exceed {Maximo} characters",
     "SmartPantry:00003": "\"{Nombre}\" is already in the list",
     "SmartPantry:00004": "The list cannot contain more than {Maximo} items",
-    "SmartPantry:ProductoCodigoBarrasDuplicado": "A product with barcode '{CodigoBarras}' already exists."
+    "SmartPantry:ProductoCodigoBarrasDuplicado": "A product with barcode '{CodigoBarras}' already exists.",
+    "Pantry:AlertsTitle": "Expiration alerts",
+    "Pantry:NonMedicalDisclaimer": "Notice: These alerts are for informational purposes only and do not constitute medical advice or diagnosis.",
+    "Pantry:NoActiveAlerts": "You have no active alerts at the moment.",
+    "Pantry:DismissAlert": "Dismiss",
+    "Pantry:ActiveItems": "Active items",
+    "Pantry:ConsumedHistory": "Consumed history",
+    "Pantry:Status:Expired": "Expired",
+    "Pantry:Status:ExpiringSoon": "Expiring soon",
+    "Pantry:Status:Valid": "Valid",
+    "Pantry:Status:NoDate": "No date",
+    "Pantry:PrivateNote": "Private note",
+    "Pantry:Note": "Note",
+    "Pantry:PrivateNoteTitle": "Private note",
+    "Pantry:PrivateNoteContent": "Note content",
+    "Pantry:DeleteNote": "Delete note",
+    "Pantry:Validation:Required": "This field is required.",
+    "Pantry:Validation:MaxLength500": "The note cannot exceed 500 characters."
   }
 }

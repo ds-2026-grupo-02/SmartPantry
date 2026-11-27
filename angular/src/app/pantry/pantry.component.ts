@@ -1,18 +1,20 @@
 import { Component, OnInit, ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, AbstractControl, ValidationErrors } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ListService, LocalizationModule, LocalizationService } from '@abp/ng.core';
 import { ConfirmationService, Confirmation, ToasterService, ThemeSharedModule } from '@abp/ng.theme.shared';
 import { DespensaService } from '../proxy/despensa/despensa.service';
-import { DespensaDto } from '../proxy/despensa/models';
+import { DespensaDto, GetDespensaListInput } from '../proxy/despensa/models';
+import { EstadoVencimiento } from '../proxy/despensa/estado-vencimiento.enum';
+import { AdvertenciaVencimientoService } from '../proxy/advertencias/advertencia-vencimiento.service';
+import { AdvertenciaVencimientoDto } from '../proxy/advertencias/models';
 
 export function fechaValidaValidator(control: AbstractControl): ValidationErrors | null {
   const value = control.value;
-  if (!value) return null; // Si es opcional y está vacío, es válido
+  if (!value) return null;
 
   if (typeof value === 'string') {
-    // Formato esperado de input date: YYYY-MM-DD
     const regex = /^\d{4}-\d{2}-\d{2}$/;
     if (!regex.test(value)) {
       return { fechaInvalida: true };
@@ -25,7 +27,6 @@ export function fechaValidaValidator(control: AbstractControl): ValidationErrors
 
     const fecha = new Date(anio, mes - 1, dia);
 
-    // Verificar que coincida día, mes y año exactos (ej. 30 de febrero Date lo convierte a marzo)
     if (
       fecha.getFullYear() !== anio ||
       fecha.getMonth() !== mes - 1 ||
@@ -33,10 +34,8 @@ export function fechaValidaValidator(control: AbstractControl): ValidationErrors
     ) {
       return { fechaInvalida: true };
     }
-  } else if (value instanceof Date) {
-    if (isNaN(value.getTime())) {
-      return { fechaInvalida: true };
-    }
+  } else if (value instanceof Date && isNaN(value.getTime())) {
+    return { fechaInvalida: true };
   }
 
   return null;
@@ -50,44 +49,66 @@ export function fechaValidaValidator(control: AbstractControl): ValidationErrors
   templateUrl: './pantry.component.html',
 })
 export class PantryComponent implements OnInit {
+  readonly EstadoVencimiento = EstadoVencimiento;
+
   items: DespensaDto[] = [];
   totalCount = 0;
+  soloConsumidos = false;
 
-  // Estados de la UI requeridos por la guía
+  // Estados de la UI
   isLoading = false;
   hasError = false;
 
-  // Modal de Edición
+  // Modal de Edición de Fecha
   isModalOpen = false;
   isSaving = false;
   editingId: string | null = null;
   form!: FormGroup;
   fechaInputInvalid = false;
+
+  // Modal de Nota Privada
+  isNotaModalOpen = false;
+  isSavingNota = false;
+  isLoadingNota = false;
+  notaItemId: string | null = null;
+  notaItemNombre: string | null = null;
+  notaForm!: FormGroup;
+
+  // Alertas activas
+  alertasActivas: AdvertenciaVencimientoDto[] = [];
+  isLoadingAlertas = false;
+
   private readonly destroyRef = inject(DestroyRef);
 
   constructor(
     public readonly list: ListService,
     private despensaService: DespensaService,
+    private advertenciaService: AdvertenciaVencimientoService,
     private confirmation: ConfirmationService,
     private toaster: ToasterService,
     private localizationService: LocalizationService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef
   ) {
-    this.buildForm();
+    this.buildForms();
   }
 
   ngOnInit(): void {
     this.hookList();
+    this.loadAlertas();
   }
 
-  buildForm() {
+  buildForms() {
     this.form = this.fb.group({
       fechaVencimiento: [null, [fechaValidaValidator]],
     });
+
+    this.notaForm = this.fb.group({
+      contenido: ['', [Validators.required, Validators.maxLength(500)]],
+    });
   }
 
-  getNombreProducto(item: DespensaDto): string | null {
+  getNombreProducto(item: { nombreProductoEs?: string | null; nombreProductoEn?: string | null }): string | null {
     const lang = (this.localizationService.currentLang || '').toLowerCase();
     if (lang.startsWith('en')) {
       return item.nombreProductoEn || item.nombreProductoEs || null;
@@ -95,9 +116,21 @@ export class PantryComponent implements OnInit {
     return item.nombreProductoEs || item.nombreProductoEn || null;
   }
 
+  getNombreProductoPorId(itemDespensaId?: string): string {
+    if (!itemDespensaId) return '';
+    const encontrado = this.items.find(x => x.id === itemDespensaId);
+    return encontrado ? (this.getNombreProducto(encontrado) || '') : '';
+  }
+
   onFechaInput(event: Event) {
     const input = event.target as HTMLInputElement;
     this.fechaInputInvalid = input.validity.badInput;
+  }
+
+  setSoloConsumidos(value: boolean) {
+    if (this.soloConsumidos === value) return;
+    this.soloConsumidos = value;
+    this.list.get();
   }
 
   hookList() {
@@ -124,8 +157,11 @@ export class PantryComponent implements OnInit {
         }
       });
 
-    const streamCreator = (query: any) =>
-      this.despensaService.getList(query, { skipHandleError: true });
+    const streamCreator = (query: GetDespensaListInput) =>
+      this.despensaService.getList(
+        { ...query, soloConsumidos: this.soloConsumidos },
+        { skipHandleError: true }
+      );
 
     this.list
       .hookToQuery(streamCreator)
@@ -148,12 +184,41 @@ export class PantryComponent implements OnInit {
   loadItems() {
     this.hasError = false;
     this.list.get();
+    this.loadAlertas();
   }
 
+  loadAlertas() {
+    this.isLoadingAlertas = true;
+    this.advertenciaService.getActivas({ skipHandleError: true }).subscribe({
+      next: (res) => {
+        this.alertasActivas = res.items ?? [];
+        this.isLoadingAlertas = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isLoadingAlertas = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  marcarAlertaVista(alerta: AdvertenciaVencimientoDto) {
+    if (!alerta.id) return;
+    this.advertenciaService.marcarComoVista(alerta.id, { skipHandleError: true }).subscribe({
+      next: () => {
+        this.loadAlertas();
+      },
+      error: () => {
+        this.toaster.error('::Pantry:Error:ConnectionTitle');
+      },
+    });
+  }
+
+  // --- Modal Fecha de Vencimiento ---
   openEditModal(item: DespensaDto) {
     this.editingId = item.id ?? null;
     this.fechaInputInvalid = false;
-    let fechaFormateada = null;
+    let fechaFormateada: string | null = null;
     if (item.fechaVencimiento) {
       const fechaStr = typeof item.fechaVencimiento === 'string'
         ? item.fechaVencimiento
@@ -188,6 +253,7 @@ export class PantryComponent implements OnInit {
         this.isSaving = false;
         this.closeModal();
         this.list.get();
+        this.loadAlertas();
       },
       error: () => {
         this.isSaving = false;
@@ -197,6 +263,78 @@ export class PantryComponent implements OnInit {
     });
   }
 
+  // --- Modal Nota Privada ---
+  openNotaModal(item: DespensaDto) {
+    if (!item.id) return;
+    this.notaItemId = item.id;
+    this.notaItemNombre = this.getNombreProducto(item);
+    this.isLoadingNota = true;
+    this.isNotaModalOpen = true;
+    this.notaForm.reset({ contenido: '' });
+
+    this.despensaService.getNotaPrivada(item.id, { skipHandleError: true }).subscribe({
+      next: (nota) => {
+        this.notaForm.patchValue({ contenido: nota?.contenido ?? '' });
+        this.isLoadingNota = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Si aún no tiene nota creada, dejamos vacío para que pueda crearla
+        this.isLoadingNota = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  closeNotaModal() {
+    this.isNotaModalOpen = false;
+    this.notaItemId = null;
+    this.notaItemNombre = null;
+    this.isSavingNota = false;
+    this.isLoadingNota = false;
+    this.notaForm.reset({ contenido: '' });
+  }
+
+  saveNota() {
+    if (this.notaForm.invalid || !this.notaItemId) return;
+    this.isSavingNota = true;
+    const contenido = (this.notaForm.value.contenido || '').trim();
+
+    this.despensaService
+      .guardarNotaPrivada(this.notaItemId, { contenido }, { skipHandleError: true })
+      .subscribe({
+        next: () => {
+          this.isSavingNota = false;
+          this.closeNotaModal();
+        },
+        error: () => {
+          this.isSavingNota = false;
+          this.toaster.error('::Pantry:Error:SaveFailed', '::Pantry:Error:ConnectionTitle');
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  deleteNota() {
+    if (!this.notaItemId) return;
+    this.isSavingNota = true;
+
+    this.despensaService
+      .eliminarNotaPrivada(this.notaItemId, { skipHandleError: true })
+      .subscribe({
+        next: () => {
+          this.isSavingNota = false;
+          this.closeNotaModal();
+        },
+        error: () => {
+          this.isSavingNota = false;
+          this.toaster.error('::Pantry:Error:DeleteFailed', '::Pantry:Error:ConnectionTitle');
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  // --- Consumir / Eliminar ---
   marcarConsumido(id: string) {
     this.confirmation
       .warn('', '::Pantry:ConsumeConfirmation')
@@ -205,6 +343,7 @@ export class PantryComponent implements OnInit {
           this.despensaService.marcarConsumido(id, { skipHandleError: true }).subscribe({
             next: () => {
               this.list.get();
+              this.loadAlertas();
             },
             error: () => {
               this.toaster.error('::Pantry:Error:ConsumeFailed', '::Pantry:Error:ConnectionTitle');
@@ -222,6 +361,7 @@ export class PantryComponent implements OnInit {
           this.despensaService.delete(id, { skipHandleError: true }).subscribe({
             next: () => {
               this.list.get();
+              this.loadAlertas();
             },
             error: () => {
               this.toaster.error('::Pantry:Error:DeleteFailed', '::Pantry:Error:ConnectionTitle');
