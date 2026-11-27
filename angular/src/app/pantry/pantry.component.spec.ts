@@ -21,6 +21,7 @@ import { AdvertenciaVencimientoService } from '../proxy/advertencias/advertencia
 import { AdvertenciaVencimientoDto } from '../proxy/advertencias/models';
 import { PreferenciaService } from '../proxy/preferencias/preferencia.service';
 import { PreferenciaDto } from '../proxy/preferencias/models';
+import { ProductoService } from '../proxy/productos/producto.service';
 
 describe('PantryComponent', () => {
   let component: PantryComponent;
@@ -34,6 +35,10 @@ describe('PantryComponent', () => {
     getNotaPrivada: ReturnType<typeof vi.fn>;
     guardarNotaPrivada: ReturnType<typeof vi.fn>;
     eliminarNotaPrivada: ReturnType<typeof vi.fn>;
+  };
+
+  let mockProductoService: {
+    get: ReturnType<typeof vi.fn>;
   };
 
   let mockAdvertenciaService: {
@@ -87,7 +92,7 @@ describe('PantryComponent', () => {
     {
       id: 'alert-1',
       itemDespensaId: '11111111-1111-1111-1111-111111111111',
-      tipoAdvertencia: 'ProximoAVencer',
+      tipoAdvertencia: 'VencimientoProximo',
       estadoVencimiento: EstadoVencimiento.ProximoAVencer,
       fechaVencimiento: '2026-12-02',
     },
@@ -113,6 +118,18 @@ describe('PantryComponent', () => {
       getNotaPrivada: vi.fn().mockReturnValue(of({ contenido: 'Nota guardada' })),
       guardarNotaPrivada: vi.fn().mockReturnValue(of({})),
       eliminarNotaPrivada: vi.fn().mockReturnValue(of({})),
+    };
+
+    mockProductoService = {
+      get: vi.fn().mockImplementation((id: string) => {
+        if (id === 'prod-1') {
+          return of({ id: 'prod-1', alergenos: ['Arroz'], ingredientes: ['Grano'] });
+        }
+        if (id === 'prod-2') {
+          return of({ id: 'prod-2', alergenos: [], ingredientes: ['Pasta', 'Trigo'] });
+        }
+        return of({ id, alergenos: [], ingredientes: [] });
+      }),
     };
 
     mockAdvertenciaService = {
@@ -148,6 +165,7 @@ describe('PantryComponent', () => {
       ],
       providers: [
         { provide: DespensaService, useValue: mockDespensaService },
+        { provide: ProductoService, useValue: mockProductoService },
         { provide: AdvertenciaVencimientoService, useValue: mockAdvertenciaService },
         { provide: PreferenciaService, useValue: mockPreferenciaService },
         { provide: ConfirmationService, useValue: mockConfirmationService },
@@ -290,8 +308,8 @@ describe('PantryComponent', () => {
       component.items = [];
       component.soloConsumidos = true;
 
-      expect(component.getNombreProductoPorId('11111111-1111-1111-1111-111111111111', 'ProximoAVencer')).toBe('Arroz');
-      expect(component.getNombreProductoPorId('id-inexistente', 'ProximoAVencer')).toBe('::Pantry:Status:ExpiringSoon');
+      expect(component.getNombreProductoPorId('11111111-1111-1111-1111-111111111111', 'VencimientoProximo')).toBe('Arroz');
+      expect(component.getNombreProductoPorId('id-inexistente', 'VencimientoProximo')).toBe('::Pantry:Status:ExpiringSoon');
     });
   });
 
@@ -427,9 +445,67 @@ describe('PantryComponent', () => {
 
       expect(mockAdvertenciaService.getActivas).toHaveBeenCalledWith({ skipHandleError: true });
       expect(mockPreferenciaService.get).toHaveBeenCalledWith({ skipHandleError: true });
+      expect(mockProductoService.get).toHaveBeenCalled();
       expect(component.alertasActivas).toEqual(sampleAlertas);
       expect(component.alertasCompatibilidad.length).toBe(2);
       expect(component.alertasCompatibilidad.map(a => a.tipo)).toEqual(['alergeno', 'ingrediente']);
+    });
+
+    it('debe detectar compatibilidad desde alérgenos/ingredientes del producto aunque el nombre sea genérico y evitar falsos positivos por unidad', () => {
+      mockDespensaService.getList.mockReturnValue(
+        of({
+          items: [
+            {
+              id: '33333333-3333-3333-3333-333333333333',
+              usuarioId: 'user-1',
+              productoId: 'prod-galletitas',
+              nombreProductoEs: 'Galletitas',
+              nombreProductoEn: 'Cookies',
+              cantidadProducto: '500 kg',
+              fechaVencimiento: null,
+              estadoVencimiento: EstadoVencimiento.SinFecha,
+              esConsumido: false,
+            },
+          ],
+          totalCount: 1,
+        } as PagedResultDto<DespensaDto>)
+      );
+
+      mockProductoService.get.mockReturnValue(
+        of({
+          id: 'prod-galletitas',
+          alergenos: ['Maní'],
+          ingredientes: ['Harina', 'Leche'],
+        })
+      );
+
+      mockPreferenciaService.get.mockReturnValue(
+        of({
+          alergenos: ['Maní', 'kg'],
+          ingredientes: ['Leche'],
+          mostrarAlertas: true,
+        })
+      );
+
+      component.loadAlertas();
+
+      expect(component.alertasCompatibilidad).toContainEqual({
+        id: 'compat-alergeno-33333333-3333-3333-3333-333333333333-maní',
+        itemDespensaId: '33333333-3333-3333-3333-333333333333',
+        nombreProducto: 'Galletitas',
+        tipo: 'alergeno',
+        coincidencia: 'Maní',
+      });
+
+      expect(component.alertasCompatibilidad).toContainEqual({
+        id: 'compat-ingrediente-33333333-3333-3333-3333-333333333333-leche',
+        itemDespensaId: '33333333-3333-3333-3333-333333333333',
+        nombreProducto: 'Galletitas',
+        tipo: 'ingrediente',
+        coincidencia: 'Leche',
+      });
+
+      expect(component.alertasCompatibilidad.some(a => a.coincidencia === 'kg')).toBe(false);
     });
 
     it('debe devolver alertas de compatibilidad vacías cuando mostrarAlertas está desactivado', () => {

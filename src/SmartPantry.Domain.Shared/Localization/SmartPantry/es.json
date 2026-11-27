@@ -105,6 +105,7 @@
     "Pantry:Save": "Guardar",
     "Pantry:DeleteConfirmation": "¿Eliminar elemento de la despensa?",
     "Pantry:Error:SaveFailed": "No se pudo guardar los cambios. Verifique la conexión con el servidor.",
+    "Pantry:Error:LoadFailed": "No se pudieron cargar los datos. Intentá nuevamente.",
     "Pantry:Error:ConsumeFailed": "No se pudo marcar el ítem como consumido. Verifique la conexión con el servidor.",
     "Pantry:Error:DeleteFailed": "No se pudo eliminar el ítem. Verifique la conexión con el servidor.",
     "Pantry:Error:ConnectionTitle": "Error de conexión",

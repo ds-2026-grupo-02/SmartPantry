@@ -13,6 +13,8 @@ import { AdvertenciaVencimientoService } from '../proxy/advertencias/advertencia
 import { AdvertenciaVencimientoDto } from '../proxy/advertencias/models';
 import { PreferenciaService } from '../proxy/preferencias/preferencia.service';
 import { PreferenciaDto } from '../proxy/preferencias/models';
+import { ProductoService } from '../proxy/productos/producto.service';
+import { ProductoDto } from '../proxy/productos/models';
 
 export interface AlertaCompatibilidad {
   id: string;
@@ -100,6 +102,7 @@ export class PantryComponent implements OnInit {
   alertasActivas: AdvertenciaVencimientoDto[] = [];
   alertasCompatibilidad: AlertaCompatibilidad[] = [];
   isLoadingAlertas = false;
+  hasErrorAlertas = false;
   private nombresItemsActivos = new Map<string, string>();
   private alertasCompatibilidadDescartadas = new Set<string>();
 
@@ -108,6 +111,7 @@ export class PantryComponent implements OnInit {
   constructor(
     public readonly list: ListService,
     private despensaService: DespensaService,
+    private productoService: ProductoService,
     private advertenciaService: AdvertenciaVencimientoService,
     private preferenciaService: PreferenciaService,
     private confirmation: ConfirmationService,
@@ -154,6 +158,7 @@ export class PantryComponent implements OnInit {
 
     if (fallbackTipo) {
       const keyMap: Record<string, string> = {
+        VencimientoProximo: '::Pantry:Status:ExpiringSoon',
         ProximoAVencer: '::Pantry:Status:ExpiringSoon',
         Vencido: '::Pantry:Status:Expired',
         Vigente: '::Pantry:Status:Valid',
@@ -250,6 +255,7 @@ export class PantryComponent implements OnInit {
 
   loadAlertas() {
     this.isLoadingAlertas = true;
+    this.hasErrorAlertas = false;
 
     forkJoin({
       vencimientos: this.advertenciaService.getActivas({ skipHandleError: true }),
@@ -267,21 +273,76 @@ export class PantryComponent implements OnInit {
         const itemsActivos = activos.items ?? [];
         this.registrarNombresActivos(itemsActivos);
         this.alertasActivas = vencimientos.items ?? [];
-        this.alertasCompatibilidad = this.calcularAlertasCompatibilidad(preferencias, itemsActivos);
-        this.isLoadingAlertas = false;
-        this.cdr.detectChanges();
+
+        const productoIds = Array.from(
+          new Set(itemsActivos.map(i => i.productoId).filter((id): id is string => Boolean(id)))
+        );
+
+        if (productoIds.length === 0) {
+          this.alertasCompatibilidad = this.calcularAlertasCompatibilidad(
+            preferencias,
+            itemsActivos,
+            new Map<string, ProductoDto>()
+          );
+          this.isLoadingAlertas = false;
+          this.cdr.detectChanges();
+          return;
+        }
+
+        const productosCalls = productoIds.reduce<Record<string, ReturnType<ProductoService['get']>>>(
+          (acc, id) => {
+            acc[id] = this.productoService
+              .get(id, { skipHandleError: true })
+              .pipe(catchError(() => of(null as unknown as ProductoDto)));
+            return acc;
+          },
+          {}
+        );
+
+        forkJoin(productosCalls).subscribe({
+          next: (productosMapObj) => {
+            const productosMap = new Map<string, ProductoDto>();
+            for (const [id, prod] of Object.entries(productosMapObj)) {
+              if (prod) productosMap.set(id, prod);
+            }
+            this.alertasCompatibilidad = this.calcularAlertasCompatibilidad(
+              preferencias,
+              itemsActivos,
+              productosMap
+            );
+            this.isLoadingAlertas = false;
+            this.cdr.detectChanges();
+          },
+          error: () => {
+            this.alertasCompatibilidad = [];
+            this.isLoadingAlertas = false;
+            this.cdr.detectChanges();
+          },
+        });
       },
       error: () => {
         this.isLoadingAlertas = false;
-        this.toaster.error('::Pantry:Error:ConnectionTitle');
+        this.hasErrorAlertas = true;
+        this.toaster.error('::Pantry:Error:LoadFailed', '::Pantry:Error:ConnectionTitle');
         this.cdr.detectChanges();
       },
     });
   }
 
+  private textoDesdeCampo(valor: unknown): string {
+    if (Array.isArray(valor)) {
+      return valor.map(v => String(v ?? '')).join(' ').toLowerCase();
+    }
+    if (typeof valor === 'string') {
+      return valor.toLowerCase();
+    }
+    return '';
+  }
+
   private calcularAlertasCompatibilidad(
     preferencia: PreferenciaDto | null,
-    itemsActivos: DespensaDto[]
+    itemsActivos: DespensaDto[],
+    productosMap: Map<string, ProductoDto>
   ): AlertaCompatibilidad[] {
     if (!preferencia || preferencia.mostrarAlertas === false) {
       return [];
@@ -299,19 +360,22 @@ export class PantryComponent implements OnInit {
     for (const item of itemsActivos) {
       if (!item.id) continue;
       const nombre = this.getNombreProducto(item) || this.localizationService.instant('::Pantry:WithoutName');
-      const textoBusqueda = [
-        item.nombreProductoEs ?? '',
-        item.nombreProductoEn ?? '',
-        item.cantidadProducto ?? '',
-      ]
+      const producto = item.productoId ? productosMap.get(item.productoId) : undefined;
+
+      const alergenosProducto = this.textoDesdeCampo(producto?.alergenos);
+      const ingredientesProducto = this.textoDesdeCampo(producto?.ingredientes);
+      const nombresProducto = [item.nombreProductoEs ?? '', item.nombreProductoEn ?? '']
         .join(' ')
         .toLowerCase();
+
+      const textoAlergenos = `${alergenosProducto} ${ingredientesProducto} ${nombresProducto}`;
+      const textoIngredientes = `${ingredientesProducto} ${nombresProducto}`;
 
       for (const alergeno of alergenos) {
         const idAlerta = `compat-alergeno-${item.id}-${alergeno.toLowerCase()}`;
         if (this.alertasCompatibilidadDescartadas.has(idAlerta)) continue;
 
-        if (textoBusqueda.includes(alergeno.toLowerCase())) {
+        if (textoAlergenos.includes(alergeno.toLowerCase())) {
           resultado.push({
             id: idAlerta,
             itemDespensaId: item.id,
@@ -326,7 +390,7 @@ export class PantryComponent implements OnInit {
         const idAlerta = `compat-ingrediente-${item.id}-${ingrediente.toLowerCase()}`;
         if (this.alertasCompatibilidadDescartadas.has(idAlerta)) continue;
 
-        if (textoBusqueda.includes(ingrediente.toLowerCase())) {
+        if (textoIngredientes.includes(ingrediente.toLowerCase())) {
           resultado.push({
             id: idAlerta,
             itemDespensaId: item.id,
@@ -432,9 +496,8 @@ export class PantryComponent implements OnInit {
       },
       error: () => {
         if (this.notaItemId !== itemIdSolicitado) return;
-        this.tieneNotaExistente = false;
-        this.isLoadingNota = false;
-        this.toaster.error('::Pantry:Error:ConnectionTitle');
+        this.closeNotaModal();
+        this.toaster.error('::Pantry:Error:LoadFailed', '::Pantry:Error:ConnectionTitle');
         this.cdr.detectChanges();
       },
     });

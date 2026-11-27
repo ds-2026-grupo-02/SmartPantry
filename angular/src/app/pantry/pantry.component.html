@@ -265,7 +265,7 @@
                       class="form-control"
                       formControlName="contenido"></textarea>
             <div *ngIf="notaForm.get('contenido')?.invalid && notaForm.get('contenido')?.touched" class="text-danger small mt-1">
-              <div *ngIf="notaForm.get('contenido')?.hasError('required')">
+              <div *ngIf="notaForm.get('contenido')?.hasError('required') || notaForm.get('contenido')?.hasError('soloEspacios')">
                 {{ '::Pantry:Validation:Required' | abpLocalization }}
               </div>
               <div *ngIf="notaForm.get('contenido')?.hasError('maxlength')">

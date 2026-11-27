@@ -102,6 +102,7 @@
     "Pantry:Save": "Save",
     "Pantry:DeleteConfirmation": "Delete pantry item?",
     "Pantry:Error:SaveFailed": "Could not save changes. Please check server connection.",
+    "Pantry:Error:LoadFailed": "Could not load data. Please try again.",
     "Pantry:Error:ConsumeFailed": "Could not mark item as consumed. Please check server connection.",
     "Pantry:Error:DeleteFailed": "Could not delete item. Please check server connection.",
     "Pantry:Error:ConnectionTitle": "Connection Error",
