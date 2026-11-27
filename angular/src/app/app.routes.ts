@@ -34,7 +34,7 @@ export const APP_ROUTES: Routes = [
   },
   {
     path: 'preferences',
-    loadComponent: () => import('./home/home.component').then(c => c.HomeComponent),
+    loadComponent: () => import('./preferences/preferences.component').then(m => m.PreferencesComponent),
     canActivate: [authGuard],
   },
   {

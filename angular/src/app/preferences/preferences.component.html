@@ -1,0 +1,203 @@
+<div class="card shadow-sm border-0">
+  <div class="card-header bg-white border-bottom py-3">
+    <div class="d-flex align-items-center">
+      <div class="preferences-icon bg-info-subtle text-info rounded-3 p-2 me-3 d-flex align-items-center justify-content-center">
+        <i class="fas fa-sliders-h fs-4"></i>
+      </div>
+      <div>
+        <h3 class="mb-0 fw-bold">{{ '::Preferences:Title' | abpLocalization }}</h3>
+        <p class="text-muted small mb-0">{{ '::Preferences:Description' | abpLocalization }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body p-4">
+    <!-- 1. ESTADO DE CARGA -->
+    <div *ngIf="isLoading" class="text-center my-5" data-testid="loading-state">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2 text-muted">{{ '::Preferences:Loading' | abpLocalization }}</p>
+    </div>
+
+    <!-- 2. ESTADO DE ERROR (Carga fallida o BackEnd detenido) -->
+    <div *ngIf="hasError && !isLoading" class="alert alert-danger text-center my-4" data-testid="error-state">
+      <h5 class="alert-heading mb-2">
+        <i class="fas fa-exclamation-triangle me-2"></i>{{ '::Preferences:ServiceUnavailable' | abpLocalization }}
+      </h5>
+      <p class="mb-3">{{ '::Preferences:ServiceUnavailableMessage' | abpLocalization }}</p>
+      <button class="btn btn-outline-danger" (click)="cargar()">
+        <i class="fas fa-sync-alt me-1"></i> {{ '::Preferences:Retry' | abpLocalization }}
+      </button>
+    </div>
+
+    <!-- 3. CONTENIDO PRINCIPAL -->
+    <div *ngIf="!isLoading && !hasError" [formGroup]="form">
+      <!-- Alertas de estado de guardado -->
+      <div *ngIf="saveSuccess" class="alert alert-success d-flex align-items-center mb-4" role="alert" data-testid="save-success-alert">
+        <i class="fas fa-check-circle me-2 fs-5"></i>
+        <div>{{ '::Preferences:SavedSuccess' | abpLocalization }}</div>
+      </div>
+
+      <div *ngIf="errorMessage" class="alert alert-danger d-flex align-items-center mb-4" role="alert" data-testid="save-error-alert">
+        <i class="fas fa-exclamation-circle me-2 fs-5"></i>
+        <div>{{ errorMessage | abpLocalization }}</div>
+      </div>
+
+      <!-- Configuración de visualización de alertas -->
+      <div class="card bg-light border-0 mb-4 p-3 rounded-3">
+        <div class="form-check form-switch d-flex align-items-center gap-2 m-0">
+          <input
+            class="form-check-input fs-5 m-0 cursor-pointer"
+            type="checkbox"
+            role="switch"
+            id="mostrarAlertasSwitch"
+            formControlName="mostrarAlertas"
+            data-testid="toggle-alerts"
+          />
+          <div class="ms-2">
+            <label class="form-check-label fw-bold cursor-pointer" for="mostrarAlertasSwitch">
+              {{ '::Preferences:ShowAlerts' | abpLocalization }}
+            </label>
+            <div class="text-muted small">{{ '::Preferences:ShowAlertsHint' | abpLocalization }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <!-- Columna 1: Alérgenos a vigilar -->
+        <div class="col-12 col-lg-6">
+          <div class="card h-100 border rounded-3 p-3">
+            <div class="mb-3">
+              <h5 class="fw-bold mb-1 d-flex align-items-center text-danger">
+                <i class="fas fa-shield-alt me-2"></i>{{ '::Preferences:AllergensTitle' | abpLocalization }}
+              </h5>
+              <p class="text-muted small mb-0">{{ '::Preferences:AllergensSubtitle' | abpLocalization }}</p>
+            </div>
+
+            <!-- Input para agregar alérgeno -->
+            <div class="input-group mb-2">
+              <input
+                type="text"
+                class="form-control"
+                [placeholder]="'::Preferences:AddPlaceholder' | abpLocalization"
+                formControlName="nuevoAlergeno"
+                (keyup.enter)="agregarAlergeno()"
+                data-testid="input-allergen"
+              />
+              <button
+                class="btn btn-outline-danger"
+                type="button"
+                (click)="agregarAlergeno()"
+                data-testid="btn-add-allergen"
+              >
+                <i class="fas fa-plus me-1"></i> {{ '::Preferences:AddButton' | abpLocalization }}
+              </button>
+            </div>
+
+            <div *ngIf="alergenoError" class="text-danger small mb-2" data-testid="allergen-error">
+              <i class="fas fa-exclamation-circle me-1"></i>{{ alergenoError | abpLocalization }}
+            </div>
+
+            <!-- Lista de alérgenos o estado vacío -->
+            <div class="mt-3">
+              <div *ngIf="alergenos.length === 0" class="text-center py-4 border border-dashed rounded-3 bg-light text-muted" data-testid="allergens-empty">
+                <i class="fas fa-check-double fs-3 mb-2 text-secondary opacity-50 d-block"></i>
+                <span>{{ '::Preferences:AllergensEmpty' | abpLocalization }}</span>
+              </div>
+
+              <div *ngIf="alergenos.length > 0" class="d-flex flex-wrap gap-2" data-testid="allergens-list">
+                <span
+                  *ngFor="let item of alergenos; let i = index"
+                  class="badge bg-danger-subtle text-danger border border-danger-subtle d-inline-flex align-items-center py-2 px-3 fs-6 rounded-pill"
+                >
+                  <span class="me-2">{{ item }}</span>
+                  <button
+                    type="button"
+                    class="btn-close btn-close-sm"
+                    [attr.aria-label]="'::Preferences:Remove' | abpLocalization"
+                    (click)="quitarAlergeno(i)"
+                    data-testid="btn-remove-allergen"
+                  ></button>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna 2: Ingredientes a vigilar -->
+        <div class="col-12 col-lg-6">
+          <div class="card h-100 border rounded-3 p-3">
+            <div class="mb-3">
+              <h5 class="fw-bold mb-1 d-flex align-items-center text-warning text-dark">
+                <i class="fas fa-leaf me-2 text-success"></i>{{ '::Preferences:IngredientsTitle' | abpLocalization }}
+              </h5>
+              <p class="text-muted small mb-0">{{ '::Preferences:IngredientsSubtitle' | abpLocalization }}</p>
+            </div>
+
+            <!-- Input para agregar ingrediente -->
+            <div class="input-group mb-2">
+              <input
+                type="text"
+                class="form-control"
+                [placeholder]="'::Preferences:AddPlaceholder' | abpLocalization"
+                formControlName="nuevoIngrediente"
+                (keyup.enter)="agregarIngrediente()"
+                data-testid="input-ingredient"
+              />
+              <button
+                class="btn btn-outline-success"
+                type="button"
+                (click)="agregarIngrediente()"
+                data-testid="btn-add-ingredient"
+              >
+                <i class="fas fa-plus me-1"></i> {{ '::Preferences:AddButton' | abpLocalization }}
+              </button>
+            </div>
+
+            <div *ngIf="ingredienteError" class="text-danger small mb-2" data-testid="ingredient-error">
+              <i class="fas fa-exclamation-circle me-1"></i>{{ ingredienteError | abpLocalization }}
+            </div>
+
+            <!-- Lista de ingredientes o estado vacío -->
+            <div class="mt-3">
+              <div *ngIf="ingredientes.length === 0" class="text-center py-4 border border-dashed rounded-3 bg-light text-muted" data-testid="ingredients-empty">
+                <i class="fas fa-check-double fs-3 mb-2 text-secondary opacity-50 d-block"></i>
+                <span>{{ '::Preferences:IngredientsEmpty' | abpLocalization }}</span>
+              </div>
+
+              <div *ngIf="ingredientes.length > 0" class="d-flex flex-wrap gap-2" data-testid="ingredients-list">
+                <span
+                  *ngFor="let item of ingredientes; let i = index"
+                  class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center py-2 px-3 fs-6 rounded-pill"
+                >
+                  <span class="me-2">{{ item }}</span>
+                  <button
+                    type="button"
+                    class="btn-close btn-close-sm"
+                    [attr.aria-label]="'::Preferences:Remove' | abpLocalization"
+                    (click)="quitarIngrediente(i)"
+                    data-testid="btn-remove-ingredient"
+                  ></button>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botón de Guardado -->
+      <div class="d-flex justify-content-end mt-4 pt-3 border-top">
+        <button
+          type="button"
+          class="btn btn-primary px-4 py-2 fw-semibold"
+          (click)="guardar()"
+          [disabled]="isSaving"
+          data-testid="btn-save"
+        >
+          <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          <i *ngIf="!isSaving" class="fas fa-save me-2"></i>
+          {{ '::Preferences:Save' | abpLocalization }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
