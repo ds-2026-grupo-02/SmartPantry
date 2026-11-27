@@ -117,7 +117,7 @@
     </div>
 
     <!-- 4. ESTADO DE RESULTADOS -->
-    <div *ngIf="!hasError && totalCount > 0" class="w-100">
+    <div *ngIf="!isLoading && !hasError && totalCount > 0" class="w-100">
       <ngx-datatable default
                      [rows]="items"
                      [count]="totalCount"

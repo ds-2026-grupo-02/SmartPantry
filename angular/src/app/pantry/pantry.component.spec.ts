@@ -233,11 +233,13 @@ describe('PantryComponent', () => {
   // 4. PESTAÑAS ACTIVOS E HISTORIAL DE CONSUMIDOS
   // =========================================================================
   describe('Pestañas Activos e Historial', () => {
-    it('debe alternar soloConsumidos y refrescar la lista al cambiar de pestaña', () => {
+    it('debe alternar soloConsumidos, resetear la página y refrescar la lista al cambiar de pestaña', () => {
       const listSpy = vi.spyOn(component.list, 'get');
+      component.list.page = 2;
 
       component.setSoloConsumidos(true);
       expect(component.soloConsumidos).toBe(true);
+      expect(component.list.page).toBe(0);
       expect(listSpy).toHaveBeenCalled();
 
       // Si se pasa el mismo valor no debe volver a pedir
@@ -391,19 +393,24 @@ describe('PantryComponent', () => {
       expect(mockDespensaService.eliminarNotaPrivada).not.toHaveBeenCalled();
     });
 
-    it('NO debe guardar si el contenido de la nota está vacío', () => {
+    it('NO debe guardar si el contenido está vacío o solo tiene espacios en blanco', () => {
       component.openNotaModal(sampleItems[0]);
       component.notaForm.get('contenido')?.setValue('');
-
       expect(component.notaForm.invalid).toBe(true);
+
+      component.notaForm.get('contenido')?.setValue('    ');
+      expect(component.notaForm.invalid).toBe(true);
+
       component.saveNota();
       expect(mockDespensaService.guardarNotaPrivada).not.toHaveBeenCalled();
     });
 
-    it('debe eliminar la nota privada y cerrar el modal', () => {
+    it('debe pedir confirmación y eliminar la nota privada cuando existe', () => {
+      mockConfirmationService.warn.mockReturnValue(of(Confirmation.Status.confirm));
       component.openNotaModal(sampleItems[0]);
       component.deleteNota();
 
+      expect(mockConfirmationService.warn).toHaveBeenCalledWith('', '::Pantry:DeleteConfirmation');
       expect(mockDespensaService.eliminarNotaPrivada).toHaveBeenCalledWith(sampleItems[0].id, {
         skipHandleError: true,
       });

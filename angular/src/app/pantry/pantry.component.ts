@@ -22,6 +22,14 @@ export interface AlertaCompatibilidad {
   coincidencia: string;
 }
 
+export function noSoloEspaciosValidator(control: AbstractControl): ValidationErrors | null {
+  const value = control.value;
+  if (typeof value === 'string' && value.trim().length === 0) {
+    return { soloEspacios: true };
+  }
+  return null;
+}
+
 export function fechaValidaValidator(control: AbstractControl): ValidationErrors | null {
   const value = control.value;
   if (!value) return null;
@@ -122,7 +130,7 @@ export class PantryComponent implements OnInit {
     });
 
     this.notaForm = this.fb.group({
-      contenido: ['', [Validators.required, Validators.maxLength(500)]],
+      contenido: ['', [Validators.required, noSoloEspaciosValidator, Validators.maxLength(500)]],
     });
   }
 
@@ -168,6 +176,7 @@ export class PantryComponent implements OnInit {
   setSoloConsumidos(value: boolean) {
     if (this.soloConsumidos === value) return;
     this.soloConsumidos = value;
+    this.list.page = 0;
     this.list.get();
   }
 
@@ -345,7 +354,7 @@ export class PantryComponent implements OnInit {
         this.loadAlertas();
       },
       error: () => {
-        this.toaster.error('::Pantry:Error:ConnectionTitle');
+        this.toaster.error('::Pantry:Error:SaveFailed', '::Pantry:Error:ConnectionTitle');
       },
     });
   }
@@ -404,15 +413,17 @@ export class PantryComponent implements OnInit {
   // --- Modal Nota Privada ---
   openNotaModal(item: DespensaDto) {
     if (!item.id) return;
-    this.notaItemId = item.id;
+    const itemIdSolicitado = item.id;
+    this.notaItemId = itemIdSolicitado;
     this.notaItemNombre = this.getNombreProducto(item);
     this.tieneNotaExistente = false;
     this.isLoadingNota = true;
     this.isNotaModalOpen = true;
     this.notaForm.reset({ contenido: '' });
 
-    this.despensaService.getNotaPrivada(item.id, { skipHandleError: true }).subscribe({
+    this.despensaService.getNotaPrivada(itemIdSolicitado, { skipHandleError: true }).subscribe({
       next: (nota) => {
+        if (this.notaItemId !== itemIdSolicitado) return;
         const contenido = nota?.contenido ?? '';
         this.tieneNotaExistente = contenido.trim().length > 0;
         this.notaForm.patchValue({ contenido });
@@ -420,8 +431,10 @@ export class PantryComponent implements OnInit {
         this.cdr.detectChanges();
       },
       error: () => {
+        if (this.notaItemId !== itemIdSolicitado) return;
         this.tieneNotaExistente = false;
         this.isLoadingNota = false;
+        this.toaster.error('::Pantry:Error:ConnectionTitle');
         this.cdr.detectChanges();
       },
     });
@@ -439,8 +452,10 @@ export class PantryComponent implements OnInit {
 
   saveNota() {
     if (this.notaForm.invalid || !this.notaItemId) return;
-    this.isSavingNota = true;
     const contenido = (this.notaForm.value.contenido || '').trim();
+    if (!contenido) return;
+
+    this.isSavingNota = true;
 
     this.despensaService
       .guardarNotaPrivada(this.notaItemId, { contenido }, { skipHandleError: true })
@@ -459,20 +474,27 @@ export class PantryComponent implements OnInit {
 
   deleteNota() {
     if (!this.notaItemId || !this.tieneNotaExistente) return;
-    this.isSavingNota = true;
+    const itemId = this.notaItemId;
 
-    this.despensaService
-      .eliminarNotaPrivada(this.notaItemId, { skipHandleError: true })
-      .subscribe({
-        next: () => {
-          this.isSavingNota = false;
-          this.closeNotaModal();
-        },
-        error: () => {
-          this.isSavingNota = false;
-          this.toaster.error('::Pantry:Error:DeleteFailed', '::Pantry:Error:ConnectionTitle');
-          this.cdr.detectChanges();
-        },
+    this.confirmation
+      .warn('', '::Pantry:DeleteConfirmation')
+      .subscribe((status: Confirmation.Status) => {
+        if (status === Confirmation.Status.confirm && this.notaItemId === itemId) {
+          this.isSavingNota = true;
+          this.despensaService
+            .eliminarNotaPrivada(itemId, { skipHandleError: true })
+            .subscribe({
+              next: () => {
+                this.isSavingNota = false;
+                this.closeNotaModal();
+              },
+              error: () => {
+                this.isSavingNota = false;
+                this.toaster.error('::Pantry:Error:DeleteFailed', '::Pantry:Error:ConnectionTitle');
+                this.cdr.detectChanges();
+              },
+            });
+        }
       });
   }
 
