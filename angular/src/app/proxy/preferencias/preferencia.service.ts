@@ -8,25 +8,23 @@ import { Injectable, inject } from '@angular/core';
 export class PreferenciaService {
   private restService = inject(RestService);
   apiName = 'Default';
+  
 
   get = (config?: Partial<Rest.Config>) =>
-    this.restService.request<any, PreferenciaDto>(
-      {
-        method: 'GET',
-        headers: { Accept: 'application/json' },
-        url: '/api/app/preferencia',
-      },
-      { apiName: this.apiName, ...config }
-    );
+    this.restService.request<any, PreferenciaDto>({
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      url: '/api/app/preferencia',
+    },
+    { apiName: this.apiName,...config });
+  
 
   update = (input: UpdatePreferenciaDto, config?: Partial<Rest.Config>) =>
-    this.restService.request<any, PreferenciaDto>(
-      {
-        method: 'PUT',
-        headers: { Accept: 'application/json' },
-        url: '/api/app/preferencia',
-        body: input,
-      },
-      { apiName: this.apiName, ...config }
-    );
+    this.restService.request<any, PreferenciaDto>({
+      method: 'PUT',
+      headers: { Accept: 'application/json' },
+      url: '/api/app/preferencia',
+      body: input,
+    },
+    { apiName: this.apiName,...config });
 }

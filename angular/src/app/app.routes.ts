@@ -39,7 +39,7 @@ export const APP_ROUTES: Routes = [
   },
   {
     path: 'alerts',
-    loadComponent: () => import('./home/home.component').then(c => c.HomeComponent),
+    loadComponent: () => import('./alertas/alerts.component').then(c => c.AlertsComponent),
     canActivate: [authGuard],
   },
 ];

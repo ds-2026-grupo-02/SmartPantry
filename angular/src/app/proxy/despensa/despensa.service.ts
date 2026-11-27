@@ -1,6 +1,6 @@
-import type { CreateDespensaDto, DespensaDto, UpdateDespensaDto } from './models';
+import type { CreateDespensaDto, DespensaDto, GetDespensaListInput, GuardarNotaPrivadaDto, NotaPrivadaDto, UpdateDespensaDto } from './models';
 import { RestService, Rest } from '@abp/ng.core';
-import type { PagedAndSortedResultRequestDto, PagedResultDto } from '@abp/ng.core';
+import type { PagedResultDto } from '@abp/ng.core';
 import { Injectable, inject } from '@angular/core';
 
 @Injectable({
@@ -29,12 +29,39 @@ export class DespensaService {
     { apiName: this.apiName,...config });
   
 
-  getList = (input: PagedAndSortedResultRequestDto, config?: Partial<Rest.Config>) =>
+  eliminarNotaPrivada = (itemId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, void>({
+      method: 'POST',
+      url: `/api/app/despensa/eliminar-nota-privada/${itemId}`,
+    },
+    { apiName: this.apiName,...config });
+  
+
+  getList = (input: GetDespensaListInput, config?: Partial<Rest.Config>) =>
     this.restService.request<any, PagedResultDto<DespensaDto>>({
       method: 'GET',
       headers: { Accept: 'application/json' },
       url: '/api/app/despensa',
-      params: { sorting: input.sorting, skipCount: input.skipCount, maxResultCount: input.maxResultCount },
+      params: { soloConsumidos: input.soloConsumidos, sorting: input.sorting, skipCount: input.skipCount, maxResultCount: input.maxResultCount },
+    },
+    { apiName: this.apiName,...config });
+  
+
+  getNotaPrivada = (itemId: string, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, NotaPrivadaDto>({
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      url: `/api/app/despensa/nota-privada/${itemId}`,
+    },
+    { apiName: this.apiName,...config });
+  
+
+  guardarNotaPrivada = (itemId: string, input: GuardarNotaPrivadaDto, config?: Partial<Rest.Config>) =>
+    this.restService.request<any, NotaPrivadaDto>({
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      url: `/api/app/despensa/guardar-nota-privada/${itemId}`,
+      body: input,
     },
     { apiName: this.apiName,...config });
   

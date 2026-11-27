@@ -9,4 +9,7 @@ public static class SmartPantryDomainErrorCodes
     public const string PreferenciaDemasiadosItems = "SmartPantry:00004";
 
     public const string ProductoCodigoBarrasDuplicado = "SmartPantry:ProductoCodigoBarrasDuplicado";
+    public const string CatalogoExternoRateLimit = "SmartPantry:CatalogoExternoRateLimit";
+    public const string CatalogoExternoTimeout = "SmartPantry:CatalogoExternoTimeout";
+    public const string CatalogoExternoNoDisponible = "SmartPantry:CatalogoExternoNoDisponible";
 }
