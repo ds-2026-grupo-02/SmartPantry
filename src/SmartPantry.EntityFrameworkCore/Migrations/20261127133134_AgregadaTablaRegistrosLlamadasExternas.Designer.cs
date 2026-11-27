@@ -13,7 +13,7 @@ using Volo.Abp.EntityFrameworkCore;
 namespace SmartPantry.Migrations
 {
     [DbContext(typeof(SmartPantryDbContext))]
-    [Migration("20261126202151_AgregadaTablaRegistrosLlamadasExternas")]
+    [Migration("20261127133134_AgregadaTablaRegistrosLlamadasExternas")]
     partial class AgregadaTablaRegistrosLlamadasExternas
     {
         /// <inheritdoc />
