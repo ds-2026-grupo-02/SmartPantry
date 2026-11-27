@@ -1,4 +1,5 @@
-import type { EntityDto } from '@abp/ng.core';
+import type { EntityDto, PagedAndSortedResultRequestDto } from '@abp/ng.core';
+import type { EstadoVencimiento } from './estado-vencimiento.enum';
 
 export interface CreateDespensaDto {
   productoId: string;
@@ -13,6 +14,21 @@ export interface DespensaDto extends EntityDto<string> {
   cantidadProducto?: string | null;
   fechaVencimiento?: string | null;
   esConsumido?: boolean;
+  estadoVencimiento?: EstadoVencimiento;
+}
+
+export interface GetDespensaListInput extends PagedAndSortedResultRequestDto {
+  soloConsumidos?: boolean | null;
+}
+
+export interface GuardarNotaPrivadaDto {
+  contenido: string;
+}
+
+export interface NotaPrivadaDto {
+  id?: string;
+  itemDespensaId?: string;
+  contenido?: string;
 }
 
 export interface UpdateDespensaDto {

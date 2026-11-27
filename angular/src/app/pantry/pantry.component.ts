@@ -1,18 +1,27 @@
-import { Component, OnInit, ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectorRef, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, AbstractControl, ValidationErrors } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ListService, LocalizationModule, LocalizationService } from '@abp/ng.core';
 import { ConfirmationService, Confirmation, ToasterService, ThemeSharedModule } from '@abp/ng.theme.shared';
 import { DespensaService } from '../proxy/despensa/despensa.service';
-import { DespensaDto } from '../proxy/despensa/models';
+import { DespensaDto, GetDespensaListInput } from '../proxy/despensa/models';
+import { EstadoVencimiento } from '../proxy/despensa/estado-vencimiento.enum';
+import { AlertsComponent } from '../alertas/alerts.component';
+
+export function noSoloEspaciosValidator(control: AbstractControl): ValidationErrors | null {
+  const value = control.value;
+  if (typeof value === 'string' && value.trim().length === 0) {
+    return { soloEspacios: true };
+  }
+  return null;
+}
 
 export function fechaValidaValidator(control: AbstractControl): ValidationErrors | null {
   const value = control.value;
-  if (!value) return null; // Si es opcional y está vacío, es válido
+  if (!value) return null;
 
   if (typeof value === 'string') {
-    // Formato esperado de input date: YYYY-MM-DD
     const regex = /^\d{4}-\d{2}-\d{2}$/;
     if (!regex.test(value)) {
       return { fechaInvalida: true };
@@ -25,7 +34,6 @@ export function fechaValidaValidator(control: AbstractControl): ValidationErrors
 
     const fecha = new Date(anio, mes - 1, dia);
 
-    // Verificar que coincida día, mes y año exactos (ej. 30 de febrero Date lo convierte a marzo)
     if (
       fecha.getFullYear() !== anio ||
       fecha.getMonth() !== mes - 1 ||
@@ -33,10 +41,8 @@ export function fechaValidaValidator(control: AbstractControl): ValidationErrors
     ) {
       return { fechaInvalida: true };
     }
-  } else if (value instanceof Date) {
-    if (isNaN(value.getTime())) {
-      return { fechaInvalida: true };
-    }
+  } else if (value instanceof Date && isNaN(value.getTime())) {
+    return { fechaInvalida: true };
   }
 
   return null;
@@ -45,24 +51,40 @@ export function fechaValidaValidator(control: AbstractControl): ValidationErrors
 @Component({
   selector: 'app-pantry',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LocalizationModule, ThemeSharedModule],
+  imports: [CommonModule, ReactiveFormsModule, LocalizationModule, ThemeSharedModule, AlertsComponent],
   providers: [ListService],
   templateUrl: './pantry.component.html',
 })
 export class PantryComponent implements OnInit {
+  readonly EstadoVencimiento = EstadoVencimiento;
+
+  @ViewChild(AlertsComponent) alertsComponent?: AlertsComponent;
+
   items: DespensaDto[] = [];
   totalCount = 0;
+  soloConsumidos = false;
 
-  // Estados de la UI requeridos por la guía
+  // Estados de la UI
   isLoading = false;
   hasError = false;
 
-  // Modal de Edición
+  // Modal de Edición de Fecha
   isModalOpen = false;
   isSaving = false;
   editingId: string | null = null;
+  editItemNombre: string | null = null;
   form!: FormGroup;
   fechaInputInvalid = false;
+
+  // Modal de Nota Privada
+  isNotaModalOpen = false;
+  isSavingNota = false;
+  isLoadingNota = false;
+  tieneNotaExistente = false;
+  notaItemId: string | null = null;
+  notaItemNombre: string | null = null;
+  notaForm!: FormGroup;
+
   private readonly destroyRef = inject(DestroyRef);
 
   constructor(
@@ -74,20 +96,24 @@ export class PantryComponent implements OnInit {
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef
   ) {
-    this.buildForm();
+    this.buildForms();
   }
 
   ngOnInit(): void {
     this.hookList();
   }
 
-  buildForm() {
+  buildForms() {
     this.form = this.fb.group({
       fechaVencimiento: [null, [fechaValidaValidator]],
     });
+
+    this.notaForm = this.fb.group({
+      contenido: ['', [Validators.required, noSoloEspaciosValidator, Validators.maxLength(500)]],
+    });
   }
 
-  getNombreProducto(item: DespensaDto): string | null {
+  getNombreProducto(item: { nombreProductoEs?: string | null; nombreProductoEn?: string | null }): string | null {
     const lang = (this.localizationService.currentLang || '').toLowerCase();
     if (lang.startsWith('en')) {
       return item.nombreProductoEn || item.nombreProductoEs || null;
@@ -95,9 +121,17 @@ export class PantryComponent implements OnInit {
     return item.nombreProductoEs || item.nombreProductoEn || null;
   }
 
+
   onFechaInput(event: Event) {
     const input = event.target as HTMLInputElement;
     this.fechaInputInvalid = input.validity.badInput;
+  }
+
+  setSoloConsumidos(value: boolean) {
+    if (this.soloConsumidos === value) return;
+    this.soloConsumidos = value;
+    this.list.page = 0;
+    this.list.get();
   }
 
   hookList() {
@@ -124,8 +158,11 @@ export class PantryComponent implements OnInit {
         }
       });
 
-    const streamCreator = (query: any) =>
-      this.despensaService.getList(query, { skipHandleError: true });
+    const streamCreator = (query: GetDespensaListInput) =>
+      this.despensaService.getList(
+        { ...query, soloConsumidos: this.soloConsumidos },
+        { skipHandleError: true }
+      );
 
     this.list
       .hookToQuery(streamCreator)
@@ -134,6 +171,16 @@ export class PantryComponent implements OnInit {
         next: (response) => {
           this.items = response.items ?? [];
           this.totalCount = response?.totalCount ?? 0;
+          if (!this.soloConsumidos) {
+            for (const item of this.items) {
+              if (item.id) {
+                const nombre = this.getNombreProducto(item);
+                if (nombre) {
+                  this.alertsComponent?.registrarNombreItem(item.id, nombre);
+                }
+              }
+            }
+          }
           this.isLoading = false;
           this.cdr.detectChanges();
         },
@@ -148,12 +195,15 @@ export class PantryComponent implements OnInit {
   loadItems() {
     this.hasError = false;
     this.list.get();
+    this.alertsComponent?.loadAlertas();
   }
 
+  // --- Modal Fecha de Vencimiento ---
   openEditModal(item: DespensaDto) {
     this.editingId = item.id ?? null;
+    this.editItemNombre = this.getNombreProducto(item);
     this.fechaInputInvalid = false;
-    let fechaFormateada = null;
+    let fechaFormateada: string | null = null;
     if (item.fechaVencimiento) {
       const fechaStr = typeof item.fechaVencimiento === 'string'
         ? item.fechaVencimiento
@@ -170,6 +220,7 @@ export class PantryComponent implements OnInit {
   closeModal() {
     this.isModalOpen = false;
     this.editingId = null;
+    this.editItemNombre = null;
     this.isSaving = false;
     this.fechaInputInvalid = false;
     this.form.reset();
@@ -188,6 +239,7 @@ export class PantryComponent implements OnInit {
         this.isSaving = false;
         this.closeModal();
         this.list.get();
+        this.alertsComponent?.loadAlertas();
       },
       error: () => {
         this.isSaving = false;
@@ -197,6 +249,94 @@ export class PantryComponent implements OnInit {
     });
   }
 
+  // --- Modal Nota Privada ---
+  openNotaModal(item: DespensaDto) {
+    if (!item.id) return;
+    const itemIdSolicitado = item.id;
+    this.notaItemId = itemIdSolicitado;
+    this.notaItemNombre = this.getNombreProducto(item);
+    this.tieneNotaExistente = false;
+    this.isLoadingNota = true;
+    this.isNotaModalOpen = true;
+    this.notaForm.reset({ contenido: '' });
+
+    this.despensaService.getNotaPrivada(itemIdSolicitado, { skipHandleError: true }).subscribe({
+      next: (nota) => {
+        if (this.notaItemId !== itemIdSolicitado) return;
+        const contenido = nota?.contenido ?? '';
+        this.tieneNotaExistente = contenido.trim().length > 0;
+        this.notaForm.patchValue({ contenido });
+        this.isLoadingNota = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        if (this.notaItemId !== itemIdSolicitado) return;
+        this.closeNotaModal();
+        this.toaster.error('::Pantry:Error:LoadFailed', '::Pantry:Error:ConnectionTitle');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  closeNotaModal() {
+    this.isNotaModalOpen = false;
+    this.notaItemId = null;
+    this.notaItemNombre = null;
+    this.tieneNotaExistente = false;
+    this.isSavingNota = false;
+    this.isLoadingNota = false;
+    this.notaForm.reset({ contenido: '' });
+  }
+
+  saveNota() {
+    if (this.notaForm.invalid || !this.notaItemId) return;
+    const contenido = (this.notaForm.value.contenido || '').trim();
+    if (!contenido) return;
+
+    this.isSavingNota = true;
+
+    this.despensaService
+      .guardarNotaPrivada(this.notaItemId, { contenido }, { skipHandleError: true })
+      .subscribe({
+        next: () => {
+          this.isSavingNota = false;
+          this.closeNotaModal();
+        },
+        error: () => {
+          this.isSavingNota = false;
+          this.toaster.error('::Pantry:Error:SaveFailed', '::Pantry:Error:ConnectionTitle');
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  deleteNota() {
+    if (!this.notaItemId || !this.tieneNotaExistente) return;
+    const itemId = this.notaItemId;
+
+    this.confirmation
+      .warn('', '::Pantry:DeleteConfirmation')
+      .subscribe((status: Confirmation.Status) => {
+        if (status === Confirmation.Status.confirm && this.notaItemId === itemId) {
+          this.isSavingNota = true;
+          this.despensaService
+            .eliminarNotaPrivada(itemId, { skipHandleError: true })
+            .subscribe({
+              next: () => {
+                this.isSavingNota = false;
+                this.closeNotaModal();
+              },
+              error: () => {
+                this.isSavingNota = false;
+                this.toaster.error('::Pantry:Error:DeleteFailed', '::Pantry:Error:ConnectionTitle');
+                this.cdr.detectChanges();
+              },
+            });
+        }
+      });
+  }
+
+  // --- Consumir / Eliminar ---
   marcarConsumido(id: string) {
     this.confirmation
       .warn('', '::Pantry:ConsumeConfirmation')
@@ -204,7 +344,9 @@ export class PantryComponent implements OnInit {
         if (status === Confirmation.Status.confirm) {
           this.despensaService.marcarConsumido(id, { skipHandleError: true }).subscribe({
             next: () => {
+              this.alertsComponent?.eliminarNombreItem(id);
               this.list.get();
+              this.alertsComponent?.loadAlertas();
             },
             error: () => {
               this.toaster.error('::Pantry:Error:ConsumeFailed', '::Pantry:Error:ConnectionTitle');
@@ -221,7 +363,9 @@ export class PantryComponent implements OnInit {
         if (status === Confirmation.Status.confirm) {
           this.despensaService.delete(id, { skipHandleError: true }).subscribe({
             next: () => {
+              this.alertsComponent?.eliminarNombreItem(id);
               this.list.get();
+              this.alertsComponent?.loadAlertas();
             },
             error: () => {
               this.toaster.error('::Pantry:Error:DeleteFailed', '::Pantry:Error:ConnectionTitle');

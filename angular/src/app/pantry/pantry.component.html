@@ -1,6 +1,26 @@
+<app-alerts *ngIf="!hasError"></app-alerts>
+
 <div class="card">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <h3>{{ '::Menu:Pantry' | abpLocalization }}</h3>
+  <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h3 class="mb-0">{{ '::Menu:Pantry' | abpLocalization }}</h3>
+    <ul class="nav nav-tabs card-header-tabs">
+      <li class="nav-item">
+        <button type="button"
+                class="nav-link"
+                [class.active]="!soloConsumidos"
+                (click)="setSoloConsumidos(false)">
+          {{ '::Pantry:ActiveItems' | abpLocalization }}
+        </button>
+      </li>
+      <li class="nav-item">
+        <button type="button"
+                class="nav-link"
+                [class.active]="soloConsumidos"
+                (click)="setSoloConsumidos(true)">
+          {{ '::Pantry:ConsumedHistory' | abpLocalization }}
+        </button>
+      </li>
+    </ul>
   </div>
 
   <div class="card-body">
@@ -10,7 +30,7 @@
       <p class="mt-2">{{ '::Loading' | abpLocalization }}...</p>
     </div>
 
-    <!-- 2. ESTADO DE ERROR (BackEnd detenido o falla de conexion) -->
+    <!-- 2. ESTADO DE ERROR -->
     <div *ngIf="hasError && !isLoading" class="alert alert-danger text-center my-4">
       <h5 class="alert-heading mb-2">
         <i class="fas fa-exclamation-triangle me-2"></i>{{ '::Pantry:ServiceUnavailable' | abpLocalization }}
@@ -26,70 +46,83 @@
       <p class="text-muted">{{ '::Pantry:Empty' | abpLocalization }}</p>
     </div>
 
-    <!-- 4. ESTADO DE RESULTADOS CON NGX-DATATABLE ESTÁNDAR ABP RESPONSIVE -->
-    <div *ngIf="!hasError && totalCount > 0" class="w-100">
-      <ngx-datatable
-        default
-        [rows]="items"
-        [count]="totalCount"
-        [list]="list"
-        [scrollbarH]="false"
-      >
-        <!-- Columna Producto (bilingüe con fallback) -->
-        <ngx-datatable-column
-          [name]="'::Pantry:Product' | abpLocalization"
-          [sortable]="false"
-        >
+    <!-- 4. ESTADO DE RESULTADOS -->
+    <div *ngIf="!isLoading && !hasError && totalCount > 0" class="w-100">
+      <ngx-datatable default
+                     [rows]="items"
+                     [count]="totalCount"
+                     [list]="list"
+                     [scrollbarH]="false">
+        <ngx-datatable-column [name]="'::Pantry:Product' | abpLocalization"
+                              [sortable]="false">
           <ng-template let-row="row" ngx-datatable-cell-template>
             <span *ngIf="getNombreProducto(row) as nombre" class="text-break">{{ nombre }}</span>
             <span *ngIf="!getNombreProducto(row)" class="text-muted">{{ '::Pantry:WithoutName' | abpLocalization }}</span>
           </ng-template>
         </ngx-datatable-column>
 
-        <!-- Columna Cantidad del producto (ej: 200 mL, 1 kg) -->
-        <ngx-datatable-column
-          [name]="'::Pantry:Quantity' | abpLocalization"
-          [sortable]="false"
-        >
+        <ngx-datatable-column [name]="'::Pantry:Quantity' | abpLocalization"
+                              [sortable]="false">
           <ng-template let-row="row" ngx-datatable-cell-template>
             <span *ngIf="row.cantidadProducto">{{ row.cantidadProducto }}</span>
             <span *ngIf="!row.cantidadProducto" class="text-muted">{{ '::Pantry:WithoutQuantity' | abpLocalization }}</span>
           </ng-template>
         </ngx-datatable-column>
 
-        <!-- Columna Fecha de Vencimiento -->
-        <ngx-datatable-column
-          [name]="'::Pantry:ExpirationDate' | abpLocalization"
-          [sortable]="false"
-        >
+        <ngx-datatable-column [name]="'::Pantry:ExpirationDate' | abpLocalization"
+                              [sortable]="false">
           <ng-template let-row="row" ngx-datatable-cell-template>
-            <span *ngIf="row.fechaVencimiento">{{ row.fechaVencimiento | date:'shortDate' }}</span>
-            <span *ngIf="!row.fechaVencimiento" class="text-muted">{{ '::Pantry:WithoutDate' | abpLocalization }}</span>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+              <span *ngIf="row.fechaVencimiento">{{ row.fechaVencimiento | date:'shortDate' }}</span>
+              <span *ngIf="!row.fechaVencimiento" class="text-muted">{{ '::Pantry:WithoutDate' | abpLocalization }}</span>
+
+              <span class="badge"
+                    [ngClass]="{
+                  'bg-danger': row.estadoVencimiento === EstadoVencimiento.Vencido,
+                  'bg-warning text-dark': row.estadoVencimiento === EstadoVencimiento.ProximoAVencer,
+                  'bg-success': row.estadoVencimiento === EstadoVencimiento.Vigente,
+                  'bg-secondary': row.estadoVencimiento === EstadoVencimiento.SinFecha || row.estadoVencimiento == null
+                }">
+                <ng-container [ngSwitch]="row.estadoVencimiento">
+                  <span *ngSwitchCase="EstadoVencimiento.Vencido">{{ '::Pantry:Status:Expired' | abpLocalization }}</span>
+                  <span *ngSwitchCase="EstadoVencimiento.ProximoAVencer">{{ '::Pantry:Status:ExpiringSoon' | abpLocalization }}</span>
+                  <span *ngSwitchCase="EstadoVencimiento.Vigente">{{ '::Pantry:Status:Valid' | abpLocalization }}</span>
+                  <span *ngSwitchDefault>{{ '::Pantry:Status:NoDate' | abpLocalization }}</span>
+                </ng-container>
+              </span>
+            </div>
           </ng-template>
         </ngx-datatable-column>
 
-        <!-- Columna Acciones -->
-        <ngx-datatable-column
-          [name]="'::Pantry:Actions' | abpLocalization"
-          [sortable]="false"
-        >
+        <ngx-datatable-column [name]="'::Pantry:PrivateNote' | abpLocalization"
+                              [sortable]="false">
+          <ng-template let-row="row" ngx-datatable-cell-template>
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="openNotaModal(row)">
+              <i class="fas fa-sticky-note me-1"></i>
+              {{ '::Pantry:Note' | abpLocalization }}
+            </button>
+          </ng-template>
+        </ngx-datatable-column>
+
+        <ngx-datatable-column [name]="'::Pantry:Actions' | abpLocalization"
+                              [sortable]="false">
           <ng-template let-row="row" ngx-datatable-cell-template>
             <div class="d-flex flex-wrap gap-1">
-              <button class="btn btn-sm btn-primary" (click)="openEditModal(row)">
-                {{ '::Pantry:Edit' | abpLocalization }}
-              </button>
-              <button
-                class="btn btn-sm btn-success"
-                *ngIf="row.id"
-                (click)="marcarConsumido(row.id)"
-              >
-                {{ '::Pantry:Consume' | abpLocalization }}
-              </button>
-              <button
-                class="btn btn-sm btn-danger"
-                *ngIf="row.id"
-                (click)="deleteItem(row.id)"
-              >
+              <ng-container *ngIf="!soloConsumidos">
+                <button class="btn btn-sm btn-primary" (click)="openEditModal(row)">
+                  {{ '::Pantry:Edit' | abpLocalization }}
+                </button>
+                <button class="btn btn-sm btn-success"
+                        *ngIf="row.id"
+                        (click)="marcarConsumido(row.id)">
+                  {{ '::Pantry:Consume' | abpLocalization }}
+                </button>
+              </ng-container>
+              <button class="btn btn-sm btn-danger"
+                      *ngIf="row.id"
+                      (click)="deleteItem(row.id)">
                 {{ '::Pantry:Delete' | abpLocalization }}
               </button>
             </div>
@@ -100,24 +133,25 @@
   </div>
 </div>
 
-<!-- Modal Formulario Reactivo de Edición -->
+<!-- Modal Formulario Reactivo de Edición de Fecha -->
 <div class="modal d-block" tabindex="-1" *ngIf="isModalOpen" style="background: rgba(0,0,0,0.5)">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">{{ '::Pantry:EditModalTitle' | abpLocalization }}</h5>
+        <h5 class="modal-title">
+          {{ '::Pantry:EditModalTitle' | abpLocalization }}
+          <span *ngIf="editItemNombre" class="text-muted fs-6"> - {{ editItemNombre }}</span>
+        </h5>
         <button type="button" class="btn-close" (click)="closeModal()"></button>
       </div>
       <form [formGroup]="form" (ngSubmit)="save()">
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">{{ '::Pantry:ExpirationDateOptional' | abpLocalization }}</label>
-            <input
-              type="date"
-              class="form-control"
-              formControlName="fechaVencimiento"
-              (input)="onFechaInput($event)"
-            />
+            <input type="date"
+                   class="form-control"
+                   formControlName="fechaVencimiento"
+                   (input)="onFechaInput($event)" />
             <div *ngIf="(form.get('fechaVencimiento')?.invalid || fechaInputInvalid) && form.get('fechaVencimiento')?.touched" class="text-danger small mt-1">
               <div *ngIf="fechaInputInvalid || form.get('fechaVencimiento')?.hasError('fechaInvalida')">
                 {{ '::Pantry:Validation:FechaInvalida' | abpLocalization }}
@@ -133,6 +167,59 @@
             <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-1" role="status"></span>
             {{ '::Pantry:Save' | abpLocalization }}
           </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nota Privada -->
+<div class="modal d-block" tabindex="-1" *ngIf="isNotaModalOpen" style="background: rgba(0,0,0,0.5)">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          {{ '::Pantry:PrivateNoteTitle' | abpLocalization }}
+          <span *ngIf="notaItemNombre" class="text-muted fs-6"> - {{ notaItemNombre }}</span>
+        </h5>
+        <button type="button" class="btn-close" (click)="closeNotaModal()"></button>
+      </div>
+      <form [formGroup]="notaForm" (ngSubmit)="saveNota()">
+        <div class="modal-body">
+          <div *ngIf="isLoadingNota" class="text-center py-3">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+          </div>
+          <div *ngIf="!isLoadingNota" class="mb-3">
+            <label class="form-label">{{ '::Pantry:PrivateNoteContent' | abpLocalization }}</label>
+            <textarea rows="3"
+                      class="form-control"
+                      formControlName="contenido"></textarea>
+            <div *ngIf="notaForm.get('contenido')?.invalid && notaForm.get('contenido')?.touched" class="text-danger small mt-1">
+              <div *ngIf="notaForm.get('contenido')?.hasError('required') || notaForm.get('contenido')?.hasError('soloEspacios')">
+                {{ '::Pantry:Validation:Required' | abpLocalization }}
+              </div>
+              <div *ngIf="notaForm.get('contenido')?.hasError('maxlength')">
+                {{ '::Pantry:Validation:MaxLength500' | abpLocalization }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer justify-content-between">
+          <button type="button"
+                  class="btn btn-outline-danger"
+                  (click)="deleteNota()"
+                  [disabled]="!tieneNotaExistente || isSavingNota || isLoadingNota">
+            {{ '::Pantry:DeleteNote' | abpLocalization }}
+          </button>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary" (click)="closeNotaModal()" [disabled]="isSavingNota">
+              {{ '::Pantry:Cancel' | abpLocalization }}
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="notaForm.invalid || isSavingNota || isLoadingNota">
+              <span *ngIf="isSavingNota" class="spinner-border spinner-border-sm me-1" role="status"></span>
+              {{ '::Pantry:Save' | abpLocalization }}
+            </button>
+          </div>
         </div>
       </form>
     </div>
