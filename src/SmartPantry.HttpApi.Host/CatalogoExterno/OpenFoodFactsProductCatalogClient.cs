@@ -320,7 +320,7 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
             Nombre = nombreEn,
             NombreEs = TrimOrNull(hit.ProductNameEs),
             Cantidad = TrimOrNull(hit.Quantity),
-            Marca = ExtraerTextoDeStringOArray(hit.Brands),
+            Marca = NormalizarTagsDesdeStringOArray(hit.Brands),
             ImagenUrl = TrimOrNull(hit.ImageFrontUrl) ?? TrimOrNull(hit.ImageUrl),
             Categorias = NormalizarTagsDesdeStringOArray(hit.Categories) ?? NormalizarTags(hit.CategoriesTags),
             Ingredientes = ingredientes,
@@ -444,34 +444,6 @@ public class OpenFoodFactsProductCatalogClient : IExternalProductCatalogClient
             int.TryParse(element.GetString()?.Trim(), out var parsed))
         {
             return NormalizarNova(parsed);
-        }
-
-        return null;
-    }
-
-    private static string? ExtraerTextoDeStringOArray(JsonElement? element)
-    {
-        if (!element.HasValue)
-        {
-            return null;
-        }
-
-        var valor = element.Value;
-        if (valor.ValueKind == JsonValueKind.String)
-        {
-            return TrimOrNull(valor.GetString());
-        }
-
-        if (valor.ValueKind == JsonValueKind.Array)
-        {
-            var items = valor.EnumerateArray()
-                .Where(e => e.ValueKind == JsonValueKind.String)
-                .Select(e => TrimOrNull(e.GetString()))
-                .Where(s => s != null)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-
-            return items.Length == 0 ? null : string.Join(", ", items);
         }
 
         return null;
