@@ -14,4 +14,5 @@ public interface IProductoAppService :
 {
     Task<ExternalProductDto?> SearchByBarcodeAsync(SearchProductInputDto input);
     Task<ProductoDto> SaveFromExternalAsync(SearchProductInputDto input);
+    Task<ResultadoBusquedaCatalogoExternoDto> SearchByTextAsync(BuscarProductoPorTextoInputDto input);
 }
