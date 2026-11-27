@@ -111,7 +111,7 @@
     "Pantry:Error:ConnectionTitle": "Error de conexión",
     "Pantry:ConsumeConfirmation": "¿Marcar elemento como consumido?",
     "Pantry:WithoutName": "Sin nombre",
-    "Pantry:AlertsTitle": "Alertas de vencimiento",
+    "Pantry:AlertsTitle": "Alertas activas",
     "Pantry:NonMedicalDisclaimer": "Aviso: Estas alertas son meramente informativas y no constituyen consejo ni diagnóstico médico.",
     "Pantry:NoActiveAlerts": "No tenés alertas activas por el momento.",
     "Pantry:DismissAlert": "Marcar como vista",
