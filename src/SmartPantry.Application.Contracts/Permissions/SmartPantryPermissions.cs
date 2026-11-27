@@ -4,8 +4,9 @@ public static class SmartPantryPermissions
 {
     public const string GroupName = "SmartPantry";
 
-
-    
-    //Add your own permission names. Example:
-    //public const string MyPermission1 = GroupName + ".MyPermission1";
+    public static class Metricas
+    {
+        public const string Default = GroupName + ".Metricas";
+        public const string VerCatalogoExterno = Default + ".CatalogoExterno";
+    }
 }

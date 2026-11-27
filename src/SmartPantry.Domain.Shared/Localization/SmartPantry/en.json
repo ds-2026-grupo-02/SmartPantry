@@ -128,6 +128,9 @@
     "Pantry:PrivateNoteContent": "Note content",
     "Pantry:DeleteNote": "Delete note",
     "Pantry:Validation:Required": "This field is required.",
-    "Pantry:Validation:MaxLength500": "The note cannot exceed 500 characters."
+    "Pantry:Validation:MaxLength500": "The note cannot exceed 500 characters.",
+    "Permission:SmartPantry": "SmartPantry",
+    "Permission:Metricas": "Metrics",
+    "Permission:Metricas.CatalogoExterno": "External catalog metrics"
   }
 }

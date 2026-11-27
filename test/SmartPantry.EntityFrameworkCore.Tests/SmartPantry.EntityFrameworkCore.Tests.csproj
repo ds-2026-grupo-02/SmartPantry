@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\SmartPantry.EntityFrameworkCore\SmartPantry.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\src\SmartPantry.HttpApi.Host\SmartPantry.HttpApi.Host.csproj" />
     <ProjectReference Include="..\SmartPantry.Application.Tests\SmartPantry.Application.Tests.csproj" />
   </ItemGroup>
 
