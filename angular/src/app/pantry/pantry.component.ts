@@ -121,32 +121,6 @@ export class PantryComponent implements OnInit {
     return item.nombreProductoEs || item.nombreProductoEn || null;
   }
 
-  getNombreProductoPorId(itemDespensaId?: string, fallbackTipo?: string): string {
-    if (itemDespensaId) {
-      const desdeActivos = this.alertsComponent?.['nombresItemsActivos']?.get(itemDespensaId);
-      if (desdeActivos) return desdeActivos;
-
-      const encontrado = this.items.find(x => x.id === itemDespensaId);
-      const nombre = encontrado ? this.getNombreProducto(encontrado) : null;
-      if (nombre) return nombre;
-    }
-
-    if (fallbackTipo) {
-      const keyMap: Record<string, string> = {
-        VencimientoProximo: '::Pantry:Status:ExpiringSoon',
-        ProximoAVencer: '::Pantry:Status:ExpiringSoon',
-        Vencido: '::Pantry:Status:Expired',
-        Vigente: '::Pantry:Status:Valid',
-        SinFecha: '::Pantry:Status:NoDate',
-      };
-      const locKey = keyMap[fallbackTipo];
-      if (locKey) {
-        return this.localizationService.instant(locKey);
-      }
-    }
-
-    return this.localizationService.instant('::Pantry:WithoutName');
-  }
 
   onFechaInput(event: Event) {
     const input = event.target as HTMLInputElement;

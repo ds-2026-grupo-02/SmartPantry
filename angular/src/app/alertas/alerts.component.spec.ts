@@ -126,6 +126,20 @@ describe('AlertsComponent', () => {
     expect(component.alertasCompatibilidad[0].coincidencia).toBe('Arroz');
   });
 
+  it('no debe generar alertas de compatibilidad cuando mostrarAlertas es false', () => {
+    mockPreferenciaService.get.mockReturnValue(
+      of({
+        alergenos: ['Arroz'],
+        ingredientes: ['Gluten'],
+        mostrarAlertas: false,
+      })
+    );
+
+    component.loadAlertas();
+
+    expect(component.alertasCompatibilidad).toEqual([]);
+  });
+
   it('debe detectar compatibilidad cuando alergenos e ingredientes del producto llegan como string separado por comas', () => {
     mockDespensaService.getList.mockReturnValue(
       of({
@@ -181,6 +195,31 @@ describe('AlertsComponent', () => {
     });
   });
 
+  it('debe descartar una alerta de compatibilidad de la lista', () => {
+    const alertaADescartar = {
+      id: 'compat-1',
+      itemDespensaId: 'item-1',
+      nombreProducto: 'Arroz',
+      tipo: 'alergeno' as const,
+      coincidencia: 'Arroz',
+    };
+
+    component.alertasCompatibilidad = [
+      alertaADescartar,
+      {
+        id: 'compat-2',
+        itemDespensaId: 'item-2',
+        nombreProducto: 'Pan',
+        tipo: 'ingrediente' as const,
+        coincidencia: 'Gluten',
+      },
+    ];
+
+    component.descartarAlertaCompatibilidad(alertaADescartar);
+
+    expect(component.alertasCompatibilidad.map((a) => a.id)).toEqual(['compat-2']);
+  });
+
   it('debe activar hasErrorAlertas y mostrar toaster cuando falla loadAlertas', () => {
     mockAdvertenciaService.getActivas.mockReturnValue(throwError(() => new Error('Error')));
     component.loadAlertas();
@@ -200,5 +239,27 @@ describe('AlertsComponent', () => {
       skipHandleError: true,
     });
     expect(mockAdvertenciaService.getActivas).toHaveBeenCalled();
+  });
+
+  it('debe mostrar error en toaster si falla marcarAlertaVista', () => {
+    mockAdvertenciaService.marcarComoVista.mockReturnValue(throwError(() => new Error('Error')));
+    mockAdvertenciaService.getActivas.mockClear();
+
+    component.marcarAlertaVista(sampleAlertas[0]);
+
+    expect(mockToasterService.error).toHaveBeenCalled();
+    expect(mockAdvertenciaService.getActivas).not.toHaveBeenCalled();
+  });
+
+  it('debe resolver el nombre del ítem en alertas aunque no esté en la página actual', () => {
+    (component as unknown as { nombresItemsActivos: Map<string, string> }).nombresItemsActivos =
+      new Map<string, string>([['11111111-1111-1111-1111-111111111111', 'Arroz']]);
+
+    expect(
+      component.getNombreProductoPorId('11111111-1111-1111-1111-111111111111', 'VencimientoProximo')
+    ).toBe('Arroz');
+    expect(
+      component.getNombreProductoPorId('id-inexistente', 'VencimientoProximo')
+    ).toBe('::Pantry:Status:ExpiringSoon');
   });
 });

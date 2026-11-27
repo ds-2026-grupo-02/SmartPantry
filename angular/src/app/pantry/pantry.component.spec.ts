@@ -296,25 +296,6 @@ describe('PantryComponent', () => {
       expect(component.getNombreProducto({ nombreProductoEs: 'SoloEspanol' })).toBe('SoloEspanol');
     });
 
-    it('debe resolver el nombre del ítem en alertas aunque no esté en la página actual o esté en historial', () => {
-      component.alertsComponent = {
-        loadAlertas: vi.fn(),
-        registrarNombreItem: vi.fn(),
-        eliminarNombreItem: vi.fn(),
-        nombresItemsActivos: new Map<string, string>([
-          ['11111111-1111-1111-1111-111111111111', 'Arroz'],
-        ]),
-      } as unknown as AlertsComponent;
-      component.items = [];
-      component.soloConsumidos = true;
-
-      expect(
-        component.getNombreProductoPorId('11111111-1111-1111-1111-111111111111', 'VencimientoProximo')
-      ).toBe('Arroz');
-      expect(component.getNombreProductoPorId('id-inexistente', 'VencimientoProximo')).toBe(
-        '::Pantry:Status:ExpiringSoon'
-      );
-    });
   });
 
   // =========================================================================
