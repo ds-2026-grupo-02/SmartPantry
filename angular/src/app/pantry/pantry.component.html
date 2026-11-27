@@ -3,7 +3,7 @@
     <h5 class="mb-0">
       <i class="fas fa-bell me-2 text-warning"></i>{{ '::Pantry:AlertsTitle' | abpLocalization }}
     </h5>
-    <span class="badge bg-warning text-dark">{{ alertasActivas.length }}</span>
+    <span class="badge bg-warning text-dark">{{ alertasActivas.length + alertasCompatibilidad.length }}</span>
   </div>
   <div class="card-body">
     <div class="alert alert-info py-2 small mb-3" role="note">
@@ -15,11 +15,11 @@
       {{ '::Loading' | abpLocalization }}...
     </div>
 
-    <div *ngIf="!isLoadingAlertas && alertasActivas.length === 0" class="text-muted small">
+    <div *ngIf="!isLoadingAlertas && alertasActivas.length === 0 && alertasCompatibilidad.length === 0" class="text-muted small">
       {{ '::Pantry:NoActiveAlerts' | abpLocalization }}
     </div>
 
-    <ul class="list-group list-group-flush" *ngIf="!isLoadingAlertas && alertasActivas.length > 0">
+    <ul class="list-group list-group-flush" *ngIf="!isLoadingAlertas && (alertasActivas.length > 0 || alertasCompatibilidad.length > 0)">
       <li *ngFor="let alerta of alertasActivas"
           class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2 px-0">
         <div>
@@ -37,7 +37,7 @@
               <span *ngSwitchDefault>{{ '::Pantry:Status:NoDate' | abpLocalization }}</span>
             </ng-container>
           </span>
-          <strong>{{ getNombreProductoPorId(alerta.itemDespensaId) || alerta.tipoAdvertencia }}</strong>
+          <strong>{{ getNombreProductoPorId(alerta.itemDespensaId, alerta.tipoAdvertencia) }}</strong>
           <span *ngIf="alerta.fechaVencimiento" class="text-muted small ms-2">
             ({{ alerta.fechaVencimiento | date:'shortDate' }})
           </span>
@@ -46,6 +46,23 @@
                 class="btn btn-sm btn-outline-secondary"
                 *ngIf="alerta.id"
                 (click)="marcarAlertaVista(alerta)">
+          {{ '::Pantry:DismissAlert' | abpLocalization }}
+        </button>
+      </li>
+
+      <li *ngFor="let compat of alertasCompatibilidad"
+          class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2 px-0">
+        <div>
+          <span class="badge me-2"
+                [ngClass]="compat.tipo === 'alergeno' ? 'bg-danger' : 'bg-warning text-dark'">
+            {{ compat.tipo === 'alergeno' ? ('::Pantry:AllergenAlert' | abpLocalization) : ('::Pantry:IngredientAlert' | abpLocalization) }}
+          </span>
+          <strong>{{ compat.nombreProducto }}</strong>
+          <span class="text-muted small ms-2">({{ compat.coincidencia }})</span>
+        </div>
+        <button type="button"
+                class="btn btn-sm btn-outline-secondary"
+                (click)="descartarAlertaCompatibilidad(compat)">
           {{ '::Pantry:DismissAlert' | abpLocalization }}
         </button>
       </li>
@@ -191,7 +208,10 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">{{ '::Pantry:EditModalTitle' | abpLocalization }}</h5>
+        <h5 class="modal-title">
+          {{ '::Pantry:EditModalTitle' | abpLocalization }}
+          <span *ngIf="editItemNombre" class="text-muted fs-6"> - {{ editItemNombre }}</span>
+        </h5>
         <button type="button" class="btn-close" (click)="closeModal()"></button>
       </div>
       <form [formGroup]="form" (ngSubmit)="save()">
@@ -258,7 +278,7 @@
           <button type="button"
                   class="btn btn-outline-danger"
                   (click)="deleteNota()"
-                  [disabled]="isSavingNota || isLoadingNota">
+                  [disabled]="!tieneNotaExistente || isSavingNota || isLoadingNota">
             {{ '::Pantry:DeleteNote' | abpLocalization }}
           </button>
           <div class="d-flex gap-2">

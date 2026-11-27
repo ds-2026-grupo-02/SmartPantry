@@ -4,11 +4,23 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ListService, LocalizationModule, LocalizationService } from '@abp/ng.core';
 import { ConfirmationService, Confirmation, ToasterService, ThemeSharedModule } from '@abp/ng.theme.shared';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { DespensaService } from '../proxy/despensa/despensa.service';
 import { DespensaDto, GetDespensaListInput } from '../proxy/despensa/models';
 import { EstadoVencimiento } from '../proxy/despensa/estado-vencimiento.enum';
 import { AdvertenciaVencimientoService } from '../proxy/advertencias/advertencia-vencimiento.service';
 import { AdvertenciaVencimientoDto } from '../proxy/advertencias/models';
+import { PreferenciaService } from '../proxy/preferencias/preferencia.service';
+import { PreferenciaDto } from '../proxy/preferencias/models';
+
+export interface AlertaCompatibilidad {
+  id: string;
+  itemDespensaId: string;
+  nombreProducto: string;
+  tipo: 'alergeno' | 'ingrediente';
+  coincidencia: string;
+}
 
 export function fechaValidaValidator(control: AbstractControl): ValidationErrors | null {
   const value = control.value;
@@ -63,6 +75,7 @@ export class PantryComponent implements OnInit {
   isModalOpen = false;
   isSaving = false;
   editingId: string | null = null;
+  editItemNombre: string | null = null;
   form!: FormGroup;
   fechaInputInvalid = false;
 
@@ -70,13 +83,17 @@ export class PantryComponent implements OnInit {
   isNotaModalOpen = false;
   isSavingNota = false;
   isLoadingNota = false;
+  tieneNotaExistente = false;
   notaItemId: string | null = null;
   notaItemNombre: string | null = null;
   notaForm!: FormGroup;
 
-  // Alertas activas
+  // Alertas activas y compatibilidad
   alertasActivas: AdvertenciaVencimientoDto[] = [];
+  alertasCompatibilidad: AlertaCompatibilidad[] = [];
   isLoadingAlertas = false;
+  private nombresItemsActivos = new Map<string, string>();
+  private alertasCompatibilidadDescartadas = new Set<string>();
 
   private readonly destroyRef = inject(DestroyRef);
 
@@ -84,6 +101,7 @@ export class PantryComponent implements OnInit {
     public readonly list: ListService,
     private despensaService: DespensaService,
     private advertenciaService: AdvertenciaVencimientoService,
+    private preferenciaService: PreferenciaService,
     private confirmation: ConfirmationService,
     private toaster: ToasterService,
     private localizationService: LocalizationService,
@@ -116,10 +134,30 @@ export class PantryComponent implements OnInit {
     return item.nombreProductoEs || item.nombreProductoEn || null;
   }
 
-  getNombreProductoPorId(itemDespensaId?: string): string {
-    if (!itemDespensaId) return '';
-    const encontrado = this.items.find(x => x.id === itemDespensaId);
-    return encontrado ? (this.getNombreProducto(encontrado) || '') : '';
+  getNombreProductoPorId(itemDespensaId?: string, fallbackTipo?: string): string {
+    if (itemDespensaId) {
+      const desdeActivos = this.nombresItemsActivos.get(itemDespensaId);
+      if (desdeActivos) return desdeActivos;
+
+      const encontrado = this.items.find(x => x.id === itemDespensaId);
+      const nombre = encontrado ? this.getNombreProducto(encontrado) : null;
+      if (nombre) return nombre;
+    }
+
+    if (fallbackTipo) {
+      const keyMap: Record<string, string> = {
+        ProximoAVencer: '::Pantry:Status:ExpiringSoon',
+        Vencido: '::Pantry:Status:Expired',
+        Vigente: '::Pantry:Status:Valid',
+        SinFecha: '::Pantry:Status:NoDate',
+      };
+      const locKey = keyMap[fallbackTipo];
+      if (locKey) {
+        return this.localizationService.instant(locKey);
+      }
+    }
+
+    return this.localizationService.instant('::Pantry:WithoutName');
   }
 
   onFechaInput(event: Event) {
@@ -170,6 +208,9 @@ export class PantryComponent implements OnInit {
         next: (response) => {
           this.items = response.items ?? [];
           this.totalCount = response?.totalCount ?? 0;
+          if (!this.soloConsumidos) {
+            this.registrarNombresActivos(this.items);
+          }
           this.isLoading = false;
           this.cdr.detectChanges();
         },
@@ -181,6 +222,17 @@ export class PantryComponent implements OnInit {
       });
   }
 
+  private registrarNombresActivos(activos: DespensaDto[]) {
+    for (const item of activos) {
+      if (item.id) {
+        const nombre = this.getNombreProducto(item);
+        if (nombre) {
+          this.nombresItemsActivos.set(item.id, nombre);
+        }
+      }
+    }
+  }
+
   loadItems() {
     this.hasError = false;
     this.list.get();
@@ -189,17 +241,101 @@ export class PantryComponent implements OnInit {
 
   loadAlertas() {
     this.isLoadingAlertas = true;
-    this.advertenciaService.getActivas({ skipHandleError: true }).subscribe({
-      next: (res) => {
-        this.alertasActivas = res.items ?? [];
+
+    forkJoin({
+      vencimientos: this.advertenciaService.getActivas({ skipHandleError: true }),
+      preferencias: this.preferenciaService.get({ skipHandleError: true }).pipe(
+        catchError(() => of(null as PreferenciaDto | null))
+      ),
+      activos: this.despensaService.getList(
+        { soloConsumidos: false, maxResultCount: 1000 },
+        { skipHandleError: true }
+      ).pipe(
+        catchError(() => of({ items: this.soloConsumidos ? [] : this.items, totalCount: 0 }))
+      ),
+    }).subscribe({
+      next: ({ vencimientos, preferencias, activos }) => {
+        const itemsActivos = activos.items ?? [];
+        this.registrarNombresActivos(itemsActivos);
+        this.alertasActivas = vencimientos.items ?? [];
+        this.alertasCompatibilidad = this.calcularAlertasCompatibilidad(preferencias, itemsActivos);
         this.isLoadingAlertas = false;
         this.cdr.detectChanges();
       },
       error: () => {
         this.isLoadingAlertas = false;
+        this.toaster.error('::Pantry:Error:ConnectionTitle');
         this.cdr.detectChanges();
       },
     });
+  }
+
+  private calcularAlertasCompatibilidad(
+    preferencia: PreferenciaDto | null,
+    itemsActivos: DespensaDto[]
+  ): AlertaCompatibilidad[] {
+    if (!preferencia || preferencia.mostrarAlertas === false) {
+      return [];
+    }
+
+    const alergenos = (preferencia.alergenos ?? []).map(a => a.trim()).filter(Boolean);
+    const ingredientes = (preferencia.ingredientes ?? []).map(i => i.trim()).filter(Boolean);
+
+    if (alergenos.length === 0 && ingredientes.length === 0) {
+      return [];
+    }
+
+    const resultado: AlertaCompatibilidad[] = [];
+
+    for (const item of itemsActivos) {
+      if (!item.id) continue;
+      const nombre = this.getNombreProducto(item) || this.localizationService.instant('::Pantry:WithoutName');
+      const textoBusqueda = [
+        item.nombreProductoEs ?? '',
+        item.nombreProductoEn ?? '',
+        item.cantidadProducto ?? '',
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      for (const alergeno of alergenos) {
+        const idAlerta = `compat-alergeno-${item.id}-${alergeno.toLowerCase()}`;
+        if (this.alertasCompatibilidadDescartadas.has(idAlerta)) continue;
+
+        if (textoBusqueda.includes(alergeno.toLowerCase())) {
+          resultado.push({
+            id: idAlerta,
+            itemDespensaId: item.id,
+            nombreProducto: nombre,
+            tipo: 'alergeno',
+            coincidencia: alergeno,
+          });
+        }
+      }
+
+      for (const ingrediente of ingredientes) {
+        const idAlerta = `compat-ingrediente-${item.id}-${ingrediente.toLowerCase()}`;
+        if (this.alertasCompatibilidadDescartadas.has(idAlerta)) continue;
+
+        if (textoBusqueda.includes(ingrediente.toLowerCase())) {
+          resultado.push({
+            id: idAlerta,
+            itemDespensaId: item.id,
+            nombreProducto: nombre,
+            tipo: 'ingrediente',
+            coincidencia: ingrediente,
+          });
+        }
+      }
+    }
+
+    return resultado;
+  }
+
+  descartarAlertaCompatibilidad(alerta: AlertaCompatibilidad) {
+    this.alertasCompatibilidadDescartadas.add(alerta.id);
+    this.alertasCompatibilidad = this.alertasCompatibilidad.filter(x => x.id !== alerta.id);
+    this.cdr.detectChanges();
   }
 
   marcarAlertaVista(alerta: AdvertenciaVencimientoDto) {
@@ -217,6 +353,7 @@ export class PantryComponent implements OnInit {
   // --- Modal Fecha de Vencimiento ---
   openEditModal(item: DespensaDto) {
     this.editingId = item.id ?? null;
+    this.editItemNombre = this.getNombreProducto(item);
     this.fechaInputInvalid = false;
     let fechaFormateada: string | null = null;
     if (item.fechaVencimiento) {
@@ -235,6 +372,7 @@ export class PantryComponent implements OnInit {
   closeModal() {
     this.isModalOpen = false;
     this.editingId = null;
+    this.editItemNombre = null;
     this.isSaving = false;
     this.fechaInputInvalid = false;
     this.form.reset();
@@ -268,18 +406,21 @@ export class PantryComponent implements OnInit {
     if (!item.id) return;
     this.notaItemId = item.id;
     this.notaItemNombre = this.getNombreProducto(item);
+    this.tieneNotaExistente = false;
     this.isLoadingNota = true;
     this.isNotaModalOpen = true;
     this.notaForm.reset({ contenido: '' });
 
     this.despensaService.getNotaPrivada(item.id, { skipHandleError: true }).subscribe({
       next: (nota) => {
-        this.notaForm.patchValue({ contenido: nota?.contenido ?? '' });
+        const contenido = nota?.contenido ?? '';
+        this.tieneNotaExistente = contenido.trim().length > 0;
+        this.notaForm.patchValue({ contenido });
         this.isLoadingNota = false;
         this.cdr.detectChanges();
       },
       error: () => {
-        // Si aún no tiene nota creada, dejamos vacío para que pueda crearla
+        this.tieneNotaExistente = false;
         this.isLoadingNota = false;
         this.cdr.detectChanges();
       },
@@ -290,6 +431,7 @@ export class PantryComponent implements OnInit {
     this.isNotaModalOpen = false;
     this.notaItemId = null;
     this.notaItemNombre = null;
+    this.tieneNotaExistente = false;
     this.isSavingNota = false;
     this.isLoadingNota = false;
     this.notaForm.reset({ contenido: '' });
@@ -316,7 +458,7 @@ export class PantryComponent implements OnInit {
   }
 
   deleteNota() {
-    if (!this.notaItemId) return;
+    if (!this.notaItemId || !this.tieneNotaExistente) return;
     this.isSavingNota = true;
 
     this.despensaService
@@ -342,6 +484,7 @@ export class PantryComponent implements OnInit {
         if (status === Confirmation.Status.confirm) {
           this.despensaService.marcarConsumido(id, { skipHandleError: true }).subscribe({
             next: () => {
+              this.nombresItemsActivos.delete(id);
               this.list.get();
               this.loadAlertas();
             },
@@ -360,6 +503,7 @@ export class PantryComponent implements OnInit {
         if (status === Confirmation.Status.confirm) {
           this.despensaService.delete(id, { skipHandleError: true }).subscribe({
             next: () => {
+              this.nombresItemsActivos.delete(id);
               this.list.get();
               this.loadAlertas();
             },

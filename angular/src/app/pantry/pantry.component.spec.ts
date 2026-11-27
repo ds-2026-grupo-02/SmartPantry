@@ -19,6 +19,8 @@ import { DespensaDto } from '../proxy/despensa/models';
 import { EstadoVencimiento } from '../proxy/despensa/estado-vencimiento.enum';
 import { AdvertenciaVencimientoService } from '../proxy/advertencias/advertencia-vencimiento.service';
 import { AdvertenciaVencimientoDto } from '../proxy/advertencias/models';
+import { PreferenciaService } from '../proxy/preferencias/preferencia.service';
+import { PreferenciaDto } from '../proxy/preferencias/models';
 
 describe('PantryComponent', () => {
   let component: PantryComponent;
@@ -37,6 +39,10 @@ describe('PantryComponent', () => {
   let mockAdvertenciaService: {
     getActivas: ReturnType<typeof vi.fn>;
     marcarComoVista: ReturnType<typeof vi.fn>;
+  };
+
+  let mockPreferenciaService: {
+    get: ReturnType<typeof vi.fn>;
   };
 
   let mockConfirmationService: {
@@ -87,6 +93,12 @@ describe('PantryComponent', () => {
     },
   ];
 
+  const samplePreferencias: PreferenciaDto = {
+    alergenos: ['Arroz'],
+    ingredientes: ['Pasta'],
+    mostrarAlertas: true,
+  };
+
   beforeEach(async () => {
     mockDespensaService = {
       getList: vi.fn().mockReturnValue(
@@ -106,6 +118,10 @@ describe('PantryComponent', () => {
     mockAdvertenciaService = {
       getActivas: vi.fn().mockReturnValue(of({ items: sampleAlertas })),
       marcarComoVista: vi.fn().mockReturnValue(of({})),
+    };
+
+    mockPreferenciaService = {
+      get: vi.fn().mockReturnValue(of(samplePreferencias)),
     };
 
     mockConfirmationService = {
@@ -133,6 +149,7 @@ describe('PantryComponent', () => {
       providers: [
         { provide: DespensaService, useValue: mockDespensaService },
         { provide: AdvertenciaVencimientoService, useValue: mockAdvertenciaService },
+        { provide: PreferenciaService, useValue: mockPreferenciaService },
         { provide: ConfirmationService, useValue: mockConfirmationService },
         { provide: ToasterService, useValue: mockToasterService },
         { provide: LocalizationService, useValue: mockLocalizationService },
@@ -265,6 +282,15 @@ describe('PantryComponent', () => {
       mockLocalizationService.currentLang = 'en';
       expect(component.getNombreProducto({ nombreProductoEs: 'SoloEspanol' })).toBe('SoloEspanol');
     });
+
+    it('debe resolver el nombre del ítem en alertas aunque no esté en la página actual o esté en historial', () => {
+      component.ngOnInit();
+      component.items = [];
+      component.soloConsumidos = true;
+
+      expect(component.getNombreProductoPorId('11111111-1111-1111-1111-111111111111', 'ProximoAVencer')).toBe('Arroz');
+      expect(component.getNombreProductoPorId('id-inexistente', 'ProximoAVencer')).toBe('::Pantry:Status:ExpiringSoon');
+    });
   });
 
   // =========================================================================
@@ -278,6 +304,7 @@ describe('PantryComponent', () => {
     it('debe abrir el modal con los valores precargados del ítem', () => {
       expect(component.isModalOpen).toBe(true);
       expect(component.editingId).toBe(sampleItems[0].id);
+      expect(component.editItemNombre).toBe('Arroz');
       expect(component.form.get('fechaVencimiento')?.value).toBe('2027-12-31');
     });
 
@@ -338,6 +365,7 @@ describe('PantryComponent', () => {
 
       expect(component.isNotaModalOpen).toBe(true);
       expect(component.notaItemId).toBe(sampleItems[0].id);
+      expect(component.tieneNotaExistente).toBe(true);
       expect(mockDespensaService.getNotaPrivada).toHaveBeenCalledWith(sampleItems[0].id, {
         skipHandleError: true,
       });
@@ -352,6 +380,15 @@ describe('PantryComponent', () => {
         { skipHandleError: true }
       );
       expect(component.isNotaModalOpen).toBe(false);
+    });
+
+    it('debe marcar tieneNotaExistente en false y no eliminar si no existe nota', () => {
+      mockDespensaService.getNotaPrivada.mockReturnValue(of({ contenido: '' }));
+      component.openNotaModal(sampleItems[0]);
+
+      expect(component.tieneNotaExistente).toBe(false);
+      component.deleteNota();
+      expect(mockDespensaService.eliminarNotaPrivada).not.toHaveBeenCalled();
     });
 
     it('NO debe guardar si el contenido de la nota está vacío', () => {
@@ -375,14 +412,48 @@ describe('PantryComponent', () => {
   });
 
   // =========================================================================
-  // 8. ALERTAS ACTIVAS
+  // 8. ALERTAS ACTIVAS Y COMPATIBILIDAD
   // =========================================================================
-  describe('Alertas Activas', () => {
-    it('debe cargar alertas activas al iniciar', () => {
+  describe('Alertas Activas y Compatibilidad', () => {
+    it('debe cargar alertas activas y alertas de compatibilidad al iniciar', () => {
       component.ngOnInit();
 
       expect(mockAdvertenciaService.getActivas).toHaveBeenCalledWith({ skipHandleError: true });
+      expect(mockPreferenciaService.get).toHaveBeenCalledWith({ skipHandleError: true });
       expect(component.alertasActivas).toEqual(sampleAlertas);
+      expect(component.alertasCompatibilidad.length).toBe(2);
+      expect(component.alertasCompatibilidad.map(a => a.tipo)).toEqual(['alergeno', 'ingrediente']);
+    });
+
+    it('debe devolver alertas de compatibilidad vacías cuando mostrarAlertas está desactivado', () => {
+      mockPreferenciaService.get.mockReturnValue(
+        of({ alergenos: ['Arroz'], ingredientes: ['Pasta'], mostrarAlertas: false })
+      );
+
+      component.loadAlertas();
+
+      expect(component.alertasCompatibilidad).toEqual([]);
+    });
+
+    it('debe devolver alertas de compatibilidad vacías cuando no hay coincidencias', () => {
+      mockPreferenciaService.get.mockReturnValue(
+        of({ alergenos: ['Maní'], ingredientes: ['Leche'], mostrarAlertas: true })
+      );
+
+      component.loadAlertas();
+
+      expect(component.alertasCompatibilidad).toEqual([]);
+    });
+
+    it('debe descartar una alerta de compatibilidad y mostrar toaster si falla loadAlertas', () => {
+      component.loadAlertas();
+      const primera = component.alertasCompatibilidad[0];
+      component.descartarAlertaCompatibilidad(primera);
+      expect(component.alertasCompatibilidad.some(a => a.id === primera.id)).toBe(false);
+
+      mockAdvertenciaService.getActivas.mockReturnValue(throwError(() => new Error('Error')));
+      component.loadAlertas();
+      expect(mockToasterService.error).toHaveBeenCalled();
     });
 
     it('debe marcar alerta como vista y recargar alertas activas', () => {

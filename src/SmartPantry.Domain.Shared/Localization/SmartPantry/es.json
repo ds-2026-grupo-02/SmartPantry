@@ -132,6 +132,8 @@
     "SmartPantry:00003": "\"{Nombre}\" ya está en la lista",
     "SmartPantry:00004": "La lista no puede tener más de {Maximo} elementos",
     "SmartPantry:ProductoCodigoBarrasDuplicado": "Ya existe un producto registrado con el código de barras '{CodigoBarras}'.",
+    "Pantry:AllergenAlert": "Alerta de alérgeno",
+    "Pantry:IngredientAlert": "Alerta de ingrediente",
     "Permission:SmartPantry": "SmartPantry",
     "Permission:Metricas": "Métricas",
     "Permission:Metricas.CatalogoExterno": "Métricas de catálogo externo"
