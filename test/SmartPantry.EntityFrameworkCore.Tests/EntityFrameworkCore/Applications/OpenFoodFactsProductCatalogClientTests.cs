@@ -9,7 +9,6 @@ using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Shouldly;
 using SmartPantry.CatalogoExterno;
-using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Guids;
 using Volo.Abp.Timing;
@@ -151,10 +150,11 @@ public class OpenFoodFactsProductCatalogClientTests : SmartPantryEntityFramework
 
         var client = CrearClienteConHandler(handler);
 
-        await Should.ThrowAsync<UserFriendlyException>(async () =>
+        var ex = await Should.ThrowAsync<CatalogoExternoException>(async () =>
         {
             await client.GetByBarcodeAsync("3017620422003");
         });
+        ex.TipoError.ShouldBe(TipoErrorCatalogoExterno.RateLimited);
 
         await WithUnitOfWorkAsync(async () =>
         {
@@ -173,10 +173,11 @@ public class OpenFoodFactsProductCatalogClientTests : SmartPantryEntityFramework
 
         var client = CrearClienteConHandler(handler);
 
-        await Should.ThrowAsync<UserFriendlyException>(async () =>
+        var ex = await Should.ThrowAsync<CatalogoExternoException>(async () =>
         {
             await client.GetByBarcodeAsync("3017620422003");
         });
+        ex.TipoError.ShouldBe(TipoErrorCatalogoExterno.ProveedorNoDisponible);
 
         await WithUnitOfWorkAsync(async () =>
         {
@@ -195,10 +196,11 @@ public class OpenFoodFactsProductCatalogClientTests : SmartPantryEntityFramework
 
         var client = CrearClienteConHandler(handler);
 
-        await Should.ThrowAsync<UserFriendlyException>(async () =>
+        var ex = await Should.ThrowAsync<CatalogoExternoException>(async () =>
         {
             await client.GetByBarcodeAsync("3017620422003");
         });
+        ex.TipoError.ShouldBe(TipoErrorCatalogoExterno.Timeout);
 
         await WithUnitOfWorkAsync(async () =>
         {
@@ -217,10 +219,11 @@ public class OpenFoodFactsProductCatalogClientTests : SmartPantryEntityFramework
 
         var client = CrearClienteConHandler(handler);
 
-        await Should.ThrowAsync<UserFriendlyException>(async () =>
+        var ex = await Should.ThrowAsync<CatalogoExternoException>(async () =>
         {
             await client.GetByBarcodeAsync("3017620422003");
         });
+        ex.TipoError.ShouldBe(TipoErrorCatalogoExterno.ProveedorNoDisponible);
 
         await WithUnitOfWorkAsync(async () =>
         {
