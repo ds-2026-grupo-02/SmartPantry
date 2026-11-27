@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SmartPantry.Despensa;
 using SmartPantry.Productos;
 using SmartPantry.Advertencias; // Importante para ExpirationWarning
+using SmartPantry.CatalogoExterno;
 using SmartPantry.Preferencias;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -47,6 +48,7 @@ public class SmartPantryDbContext :
     public DbSet<NotaPrivadaDespensa> NotasPrivadasDespensa { get; set; }
     public DbSet<Producto> Productos { get; set; }
     public DbSet<ItemDespensa> ItemsDespensa { get; set; }
+    public DbSet<RegistroLlamadaExterna> RegistrosLlamadasExternas { get; set; }
     public DbSet<AdvertenciaVencimiento> AdvertenciasVencimiento { get; set; }
     public DbSet<PreferenciaUsuario> PreferenciasUsuario { get; set; }
 
@@ -73,8 +75,6 @@ public class SmartPantryDbContext :
 
         /* Mapeo de Entidades */
 
-        //SmartPantry.Despensa ya está importado arriba,
-        //así que NotaPrivadaDespensa e ItemDespensa se resuelven directo).
         builder.Entity<NotaPrivadaDespensa>(b =>
         {
             b.ToTable(SmartPantryConsts.DbTablePrefix + "NotasPrivadasDespensa", SmartPantryConsts.DbSchema);
@@ -89,6 +89,7 @@ public class SmartPantryDbContext :
              .HasForeignKey(x => x.ItemDespensaId)
              .OnDelete(DeleteBehavior.Cascade);
         });
+
         builder.Entity<Producto>(b =>
         {
             b.ToTable(SmartPantryConsts.DbTablePrefix + "Productos", SmartPantryConsts.DbSchema);
@@ -144,9 +145,29 @@ public class SmartPantryDbContext :
              .IsRequired()
              .HasMaxLength(64);
 
-            // Índice único compuesto para asegurar la idempotencia requerida en el TP08
             b.HasIndex(x => new { x.ItemDespensaId, x.TipoAdvertencia })
              .IsUnique();
+        });
+
+        builder.Entity<RegistroLlamadaExterna>(b =>
+        {
+            b.ToTable(SmartPantryConsts.DbTablePrefix + "RegistrosLlamadasExternas", SmartPantryConsts.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.TipoOperacion)
+             .IsRequired();
+
+            b.Property(x => x.FechaHoraUtc)
+             .IsRequired();
+
+            b.Property(x => x.DuracionMs)
+             .IsRequired();
+
+            b.Property(x => x.Resultado)
+             .IsRequired();
+
+            b.HasIndex(x => new { x.FechaHoraUtc, x.Resultado });
+            b.HasIndex(x => new { x.FechaHoraUtc, x.TipoOperacion });
         });
 
         builder.Entity<PreferenciaUsuario>(b =>
